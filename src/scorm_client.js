@@ -3,7 +3,7 @@
   Replaces the pipwerks singleton with a proper instantiable client.
 
   Usage:
-    import ScormClient from './scorm_client.js';
+    import ScormClient from 'scorm-client';
 
     const client = new ScormClient();
     // or pre-set the version and options:

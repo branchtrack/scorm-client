@@ -226,7 +226,7 @@ Always returns `true`. Allows external runtimes to confirm the wrapper is loaded
 ## Typical session lifecycle
 
 ```js
-import ScormClient from './scorm-client.js';
+import ScormClient from 'scorm-client';
 
 const client = new ScormClient();
 
