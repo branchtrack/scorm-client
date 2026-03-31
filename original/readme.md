@@ -1,7 +1,7 @@
-Created by Philip Hutchison, January 2008  
+Created by Philip Hutchison, January 2008
 https://github.com/pipwerks/scorm-api-wrapper
 
-Copyright (c) Philip Hutchison  
+Copyright (c) Philip Hutchison
 MIT-style license: http://pipwerks.mit-license.org/
 
 Inspired by APIWrapper.js, which was a demo file created by the ADL and Concurrent Technologies Corporation.
@@ -10,7 +10,7 @@ The SCORM.API.find() and SCORM.API.get() functions are based on ADL code, which 
 
 WARNING: Use at your own risk! These files are provided as-is with no implied warranties or guarantees.
 
-##Background 
+##Background
 
 These wrappers are intended to make your life easier so you don't need to be a SCORM expert to add SCORM support to your e-learning course.
 
@@ -18,9 +18,9 @@ The SCORM API wrappers are an abstraction layer that makes adding SCORM code to 
 
 The SCORM API Wrappers come in three varieties:
 
-* JavaScript
-* ActionScript 2 (AS2)
-* ActionScript 3 (AS3)
+- JavaScript
+- ActionScript 2 (AS2)
+- ActionScript 3 (AS3)
 
 All three wrappers are SCORM version-agnostic, and will work with both SCORM 1.2 and SCORM 2004. Both of the ActionScript wrappers require the JavaScript wrapper; the AS wrappers use ExternalInterface to invoke functions contained in the JavaScript wrapper. If the JS wrapper is not present, the ActionScript wrappers will not work.
 
