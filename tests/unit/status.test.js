@@ -1,0 +1,61 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import ScormClient from '../../src/scorm_client.js';
+import { mockApi12, mockApi2004 } from '../helpers/mockLms.js';
+
+describe('ScormClient.status (SCORM 1.2)', () => {
+  let api, client;
+
+  beforeEach(() => {
+    api = mockApi12();
+    window.API = api;
+    client = new ScormClient({ version: '1.2' });
+    client.init();
+  });
+  afterEach(() => { delete window.API; });
+
+  it('get returns value via cmi.core.lesson_status', () => {
+    api.LMSGetValue.mockReturnValue('completed');
+    expect(client.status('get')).toBe('completed');
+    expect(api.LMSGetValue).toHaveBeenCalledWith('cmi.core.lesson_status');
+  });
+
+  it('set calls LMSSetValue with cmi.core.lesson_status', () => {
+    expect(client.status('set', 'completed')).toBe(true);
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.lesson_status', 'completed');
+  });
+
+  it('returns false when action is falsy', () => {
+    expect(client.status(null)).toBe(false);
+  });
+
+  it('returns false when status is null on set', () => {
+    expect(client.status('set', null)).toBe(false);
+  });
+
+  it('returns false for unknown action', () => {
+    expect(client.status('invalid')).toBe(false);
+  });
+});
+
+describe('ScormClient.status (SCORM 2004)', () => {
+  let api, client;
+
+  beforeEach(() => {
+    api = mockApi2004();
+    window.API_1484_11 = api;
+    client = new ScormClient({ version: '2004' });
+    client.init();
+  });
+  afterEach(() => { delete window.API_1484_11; });
+
+  it('get returns value via cmi.completion_status', () => {
+    api.GetValue.mockReturnValue('incomplete');
+    expect(client.status('get')).toBe('incomplete');
+    expect(api.GetValue).toHaveBeenCalledWith('cmi.completion_status');
+  });
+
+  it('set calls SetValue with cmi.completion_status', () => {
+    client.status('set', 'completed');
+    expect(api.SetValue).toHaveBeenCalledWith('cmi.completion_status', 'completed');
+  });
+});
