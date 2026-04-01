@@ -39,6 +39,7 @@ const client = new ScormClient(options);
 | `version`                | `'1.2' \| '2004' \| null` | `null`  | SCORM version to use. When `null`, the client auto-detects by looking for `window.API` (1.2) or `window.API_1484_11` (2004). |
 | `handleCompletionStatus` | `boolean`                 | `true`  | On `init()`, if the current status is `not attempted` (1.2) or `unknown` (2004), automatically sets it to `incomplete`.      |
 | `handleExitMode`         | `boolean`                 | `true`  | On `quit()`, automatically sets the exit CMI field to `suspend` (incomplete) or `logout`/`normal` (completed/passed).        |
+| `handleSessionTime`      | `boolean`                 | `true`  | On `quit()`, automatically computes elapsed session time and writes it to the appropriate CMI field before committing.       |
 | `debug`                  | `boolean`                 | `false` | Logs trace messages to `console.log`.                                                                                        |
 
 ```js
@@ -56,6 +57,7 @@ const client = new ScormClient({
   version: '1.2',
   handleCompletionStatus: true,
   handleExitMode: true,
+  handleSessionTime: true,
   debug: false,
 });
 ```
@@ -101,10 +103,20 @@ When `handleExitMode` is enabled (default), automatically sets the exit field be
 | `completed` or `passed` | `logout`                  | `normal`              |
 | anything else           | `suspend`                 | `suspend`             |
 
+When `handleSessionTime` is enabled (default), automatically computes the time elapsed since `init()` and writes it to the version-appropriate CMI field before the final commit:
+
+| Version    | Field                   | Format                | Example      |
+| ---------- | ----------------------- | --------------------- | ------------ |
+| SCORM 1.2  | `cmi.core.session_time` | `HH:MM:SS`            | `00:45:12`   |
+| SCORM 2004 | `cmi.session_time`      | ISO 8601 (`PTxHxMxS`) | `PT0H45M12S` |
+
 For SCORM 1.2, a `save()` is performed automatically before `LMSFinish`.
 
 ```js
 client.quit();
+
+// Opt out of automatic session time reporting
+const client = new ScormClient({ handleSessionTime: false });
 ```
 
 ---

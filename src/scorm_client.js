@@ -19,30 +19,35 @@ export class ScormClient {
   #version;
   #handleCompletionStatus;
   #handleExitMode;
+  #handleSessionTime;
   #debugActive;
   #apiHandle;
   #apiFound;
   #connectionActive;
   #completionStatus;
   #exitStatus;
+  #sessionStartTime;
 
   /**
    * @param {object}      [options]
    * @param {string|null} [options.version]                - Pre-set SCORM version ('1.2' or '2004'). Auto-detected when null.
    * @param {boolean}     [options.handleCompletionStatus] - Automatically set 'incomplete' on first launch (default: true).
    * @param {boolean}     [options.handleExitMode]         - Automatically set exit mode on terminate (default: true).
+   * @param {boolean}     [options.handleSessionTime]      - Automatically write session time on quit (default: true).
    * @param {boolean}     [options.debug]                  - Enable console trace logging (default: false).
    */
-  constructor({ version = null, handleCompletionStatus = true, handleExitMode = true, debug = false } = {}) {
+  constructor({ version = null, handleCompletionStatus = true, handleExitMode = true, handleSessionTime = true, debug = false } = {}) {
     this.#version = version;
     this.#handleCompletionStatus = handleCompletionStatus;
     this.#handleExitMode = handleExitMode;
+    this.#handleSessionTime = handleSessionTime;
     this.#debugActive = debug;
     this.#apiHandle = null;
     this.#apiFound = false;
     this.#connectionActive = false;
     this.#completionStatus = null;
     this.#exitStatus = null;
+    this.#sessionStartTime = null;
   }
 
   // ── Public read-only accessors ──────────────────────────────────────────── //
@@ -77,6 +82,7 @@ export class ScormClient {
       const errorCode = this.getLastError();
       if (errorCode === 0) {
         this.#connectionActive = true;
+        this.#sessionStartTime = Date.now();
 
         if (this.#handleCompletionStatus) {
           const currentStatus = this.status('get');
@@ -123,6 +129,16 @@ export class ScormClient {
       }
     }
 
+    // Write session time before committing.
+    if (this.#handleSessionTime && this.#sessionStartTime) {
+      const elapsedSeconds = Math.round((Date.now() - this.#sessionStartTime) / 1000);
+      if (this.#version === '1.2') {
+        this.set('cmi.core.session_time', this.#formatSessionTime12(elapsedSeconds));
+      } else {
+        this.set('cmi.session_time', this.#formatSessionTime2004(elapsedSeconds));
+      }
+    }
+
     // SCORM 1.2 requires an explicit commit before LMSFinish; 2004 commits implicitly on Terminate.
     const saved = this.#version === '1.2' ? this.save() : true;
     if (!saved) return false;
@@ -134,6 +150,7 @@ export class ScormClient {
 
     if (success) {
       this.#connectionActive = false;
+      this.#sessionStartTime = null;
     } else {
       const errorCode = this.getLastError();
       this.#trace(`connection.terminate failed. Error code: ${errorCode} | Info: ${this.getErrorInfo(errorCode)}`);
@@ -355,6 +372,22 @@ export class ScormClient {
       this.#apiHandle = this.#getApi();
     }
     return this.#apiHandle;
+  }
+
+  // ── Private: session time ─────────────────────────────────────────────────── //
+
+  #formatSessionTime12(totalSeconds) {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
+  }
+
+  #formatSessionTime2004(totalSeconds) {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return `PT${h}H${m}M${s}S`;
   }
 
   // ── Private: utilities ───────────────────────────────────────────────────── //

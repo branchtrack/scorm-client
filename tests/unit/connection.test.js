@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import ScormClient from '../../src/scorm_client.js';
 import { mockApi12, mockApi2004 } from '../helpers/mockLms.js';
 
@@ -123,5 +123,108 @@ describe('ScormClient.quit (SCORM 2004)', () => {
     client.set('cmi.completion_status', 'completed');
     client.quit();
     expect(api.SetValue).toHaveBeenCalledWith('cmi.exit', 'normal');
+  });
+});
+
+describe('ScormClient - session time tracking (SCORM 1.2)', () => {
+  let api;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    api = mockApi12();
+    window.API = api;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    delete window.API;
+  });
+
+  it('writes cmi.core.session_time on quit', () => {
+    const client = new ScormClient({ version: '1.2' });
+    client.init();
+    vi.advanceTimersByTime(90_000); // 1m 30s
+    client.quit();
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.session_time', '00:01:30');
+  });
+
+  it('formats hours and minutes correctly', () => {
+    const client = new ScormClient({ version: '1.2' });
+    client.init();
+    vi.advanceTimersByTime(3_661_000); // 1h 1m 1s
+    client.quit();
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.session_time', '01:01:01');
+  });
+
+  it('records zero time when quit immediately after init', () => {
+    const client = new ScormClient({ version: '1.2' });
+    client.init();
+    client.quit();
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.session_time', '00:00:00');
+  });
+});
+
+describe('ScormClient - session time tracking (SCORM 2004)', () => {
+  let api;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    api = mockApi2004();
+    window.API_1484_11 = api;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    delete window.API_1484_11;
+  });
+
+  it('writes cmi.session_time on quit', () => {
+    const client = new ScormClient({ version: '2004' });
+    client.init();
+    vi.advanceTimersByTime(90_000); // 1m 30s
+    client.quit();
+    expect(api.SetValue).toHaveBeenCalledWith('cmi.session_time', 'PT0H1M30S');
+  });
+
+  it('formats hours and minutes correctly', () => {
+    const client = new ScormClient({ version: '2004' });
+    client.init();
+    vi.advanceTimersByTime(3_661_000); // 1h 1m 1s
+    client.quit();
+    expect(api.SetValue).toHaveBeenCalledWith('cmi.session_time', 'PT1H1M1S');
+  });
+
+  it('records zero time when quit immediately after init', () => {
+    const client = new ScormClient({ version: '2004' });
+    client.init();
+    client.quit();
+    expect(api.SetValue).toHaveBeenCalledWith('cmi.session_time', 'PT0H0M0S');
+  });
+});
+
+describe('ScormClient - handleSessionTime: false', () => {
+  afterEach(() => {
+    delete window.API;
+    delete window.API_1484_11;
+  });
+
+  it('does not write session_time on quit (SCORM 1.2)', () => {
+    const api = mockApi12();
+    window.API = api;
+    const client = new ScormClient({ version: '1.2', handleSessionTime: false });
+    client.init();
+    client.quit();
+    const calls = api.LMSSetValue.mock.calls.map(([key]) => key);
+    expect(calls).not.toContain('cmi.core.session_time');
+  });
+
+  it('does not write session_time on quit (SCORM 2004)', () => {
+    const api = mockApi2004();
+    window.API_1484_11 = api;
+    const client = new ScormClient({ version: '2004', handleSessionTime: false });
+    client.init();
+    client.quit();
+    const calls = api.SetValue.mock.calls.map(([key]) => key);
+    expect(calls).not.toContain('cmi.session_time');
   });
 });
