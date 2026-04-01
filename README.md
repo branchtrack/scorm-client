@@ -125,15 +125,17 @@ const client = new ScormClient({ handleSessionTime: false });
 
 Retrieves a value from the LMS data model. Always returns a string (`"null"` if the connection is inactive).
 
-```js
-// SCORM 1.2
-const status = client.get('cmi.core.lesson_status');
-const score = client.get('cmi.core.score.raw');
-const name = client.get('cmi.core.student_name');
+Parameters are automatically normalized — see [Field name shortcuts](#field-name-shortcuts) below.
 
-// SCORM 2004
-const status = client.get('cmi.completion_status');
-const score = client.get('cmi.score.raw');
+```js
+// Short keys (version-agnostic)
+const status = client.get('lesson_status');
+const score = client.get('score');
+const name = client.get('student_name');
+
+// Full CMI paths (passed through unchanged)
+const status = client.get('cmi.core.lesson_status'); // SCORM 1.2
+const status = client.get('cmi.completion_status'); // SCORM 2004
 ```
 
 ---
@@ -142,15 +144,17 @@ const score = client.get('cmi.score.raw');
 
 Writes a value to the LMS data model. Returns `true` on success.
 
-```js
-// SCORM 1.2
-client.set('cmi.core.score.raw', '95');
-client.set('cmi.core.lesson_status', 'completed');
+Parameters are automatically normalized — see [Field name shortcuts](#field-name-shortcuts) below.
 
-// SCORM 2004
-client.set('cmi.score.raw', '95');
-client.set('cmi.completion_status', 'completed');
-client.set('cmi.success_status', 'passed');
+```js
+// Short keys (version-agnostic)
+client.set('score', '95');
+client.set('lesson_status', 'completed');
+client.set('success_status', 'passed'); // 2004 only
+
+// Full CMI paths (passed through unchanged)
+client.set('cmi.core.score.raw', '95'); // SCORM 1.2
+client.set('cmi.completion_status', 'completed'); // SCORM 2004
 ```
 
 ---
@@ -248,15 +252,12 @@ if (!client.init()) {
 }
 
 // 2. Read learner data
-const studentName = client.get(
-  client.version === '1.2' ? 'cmi.core.student_name' : 'cmi.learner_name',
-);
+const studentName = client.get('student_name'); // cmi.core.student_name (1.2) / cmi.learner_name (2004)
+// or equivalently:
+const learnerName = client.get('learner_name'); // same result, both forms accepted
 
 // 3. Update progress
-client.set(
-  client.version === '1.2' ? 'cmi.core.score.raw' : 'cmi.score.raw',
-  '88',
-);
+client.set('score', '88'); // resolves per version
 
 // 4. Mark complete
 client.status('set', 'completed');
@@ -265,6 +266,46 @@ client.status('set', 'completed');
 client.save();
 client.quit();
 ```
+
+## Field name shortcuts
+
+`get()` and `set()` accept short field names that are resolved to the correct CMI path for the active SCORM version. Pass a full `cmi.*` path to bypass normalization entirely.
+
+**Resolution rules (applied in order):**
+
+1. Key starts with `cmi.` → passed through unchanged
+2. Key matches an exception entry → use the mapped path
+3. Otherwise → prepend the default prefix (`cmi.core.` for 1.2, `cmi.` for 2004)
+
+**Exception mappings (keys that deviate from the default prefix):**
+
+| Short key         | SCORM 1.2                  | SCORM 2004              |
+| ----------------- | -------------------------- | ----------------------- |
+| `score`           | `cmi.core.score.raw`       | `cmi.score.raw`         |
+| `lesson_status`   | `cmi.core.lesson_status`   | `cmi.completion_status` |
+| `lesson_location` | `cmi.core.lesson_location` | `cmi.location`          |
+| `suspend_data`    | `cmi.suspend_data`         | `cmi.suspend_data`      |
+
+**Cross-version learner identity aliases:**
+
+SCORM 1.2 uses `student_*` field names; SCORM 2004 uses `learner_*`. Both short forms are accepted in either version and resolve to the correct underlying field.
+
+| Short key      | SCORM 1.2              | SCORM 2004          |
+| -------------- | ---------------------- | ------------------- |
+| `learner_id`   | `cmi.core.student_id`  | `cmi.learner_id`    |
+| `learner_name` | `cmi.core.student_name`| `cmi.learner_name`  |
+| `student_id`   | `cmi.core.student_id`  | `cmi.learner_id`    |
+| `student_name` | `cmi.core.student_name`| `cmi.learner_name`  |
+
+**Default prefix examples (no exception needed):**
+
+```js
+client.get('success_status'); // → cmi.core.success_status (1.2) / cmi.success_status (2004)
+client.get('completion_threshold'); // → cmi.core.completion_threshold (1.2) / cmi.completion_threshold (2004)
+client.set('exit', 'suspend'); // → cmi.core.exit (1.2) / cmi.exit (2004)
+```
+
+---
 
 ## SCORM 1.2 vs SCORM 2004 field reference
 

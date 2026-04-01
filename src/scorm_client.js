@@ -1,3 +1,5 @@
+import { normalizeField, stringToBoolean, formatSessionTime } from './utils.js';
+
 /*
   ScormClient — modern class-based SCORM 1.2 / 2004 API wrapper
   Replaces the pipwerks singleton with a proper instantiable client.
@@ -75,8 +77,8 @@ export class ScormClient {
 
     let success =
       this.#version === '1.2'
-        ? this.#stringToBoolean(api.LMSInitialize(''))
-        : this.#stringToBoolean(api.Initialize(''));
+        ? stringToBoolean(api.LMSInitialize(''))
+        : stringToBoolean(api.Initialize(''));
 
     if (success) {
       const errorCode = this.getLastError();
@@ -122,21 +124,13 @@ export class ScormClient {
 
     if (this.#handleExitMode && !this.#exitStatus) {
       const finished = this.#completionStatus === 'completed' || this.#completionStatus === 'passed';
-      if (this.#version === '1.2') {
-        this.set('cmi.core.exit', finished ? 'logout' : 'suspend');
-      } else {
-        this.set('cmi.exit', finished ? 'normal' : 'suspend');
-      }
+      this.set('exit', finished ? (this.#version === '1.2' ? 'logout' : 'normal') : 'suspend');
     }
 
     // Write session time before committing.
     if (this.#handleSessionTime && this.#sessionStartTime) {
       const elapsedSeconds = Math.round((Date.now() - this.#sessionStartTime) / 1000);
-      if (this.#version === '1.2') {
-        this.set('cmi.core.session_time', this.#formatSessionTime12(elapsedSeconds));
-      } else {
-        this.set('cmi.session_time', this.#formatSessionTime2004(elapsedSeconds));
-      }
+      this.set('session_time', formatSessionTime(this.#version, elapsedSeconds));
     }
 
     // SCORM 1.2 requires an explicit commit before LMSFinish; 2004 commits implicitly on Terminate.
@@ -145,8 +139,8 @@ export class ScormClient {
 
     const success =
       this.#version === '1.2'
-        ? this.#stringToBoolean(api.LMSFinish(''))
-        : this.#stringToBoolean(api.Terminate(''));
+        ? stringToBoolean(api.LMSFinish(''))
+        : stringToBoolean(api.Terminate(''));
 
     if (success) {
       this.#connectionActive = false;
@@ -163,6 +157,8 @@ export class ScormClient {
 
   /** Get a SCORM data model value. Returns a string. */
   get(parameter) {
+    parameter = normalizeField(this.#version, parameter);
+
     if (!this.#connectionActive) {
       this.#trace(`data.get('${parameter}') failed: API connection is inactive.`);
       return String(null);
@@ -196,6 +192,8 @@ export class ScormClient {
 
   /** Set a SCORM data model value. Returns true on success. */
   set(parameter, value) {
+    parameter = normalizeField(this.#version, parameter);
+
     if (!this.#connectionActive) {
       this.#trace(`data.set('${parameter}') failed: API connection is inactive.`);
       return false;
@@ -209,8 +207,8 @@ export class ScormClient {
 
     const success =
       this.#version === '1.2'
-        ? this.#stringToBoolean(api.LMSSetValue(parameter, value))
-        : this.#stringToBoolean(api.SetValue(parameter, value));
+        ? stringToBoolean(api.LMSSetValue(parameter, value))
+        : stringToBoolean(api.SetValue(parameter, value));
 
     if (success) {
       if (parameter === 'cmi.core.lesson_status' || parameter === 'cmi.completion_status') {
@@ -238,8 +236,8 @@ export class ScormClient {
     }
 
     return this.#version === '1.2'
-      ? this.#stringToBoolean(api.LMSCommit(''))
-      : this.#stringToBoolean(api.Commit(''));
+      ? stringToBoolean(api.LMSCommit(''))
+      : stringToBoolean(api.Commit(''));
   }
 
   // ── Status shortcut ──────────────────────────────────────────────────────── //
@@ -255,17 +253,14 @@ export class ScormClient {
       return false;
     }
 
-    const cmi =
-      this.#version === '1.2' ? 'cmi.core.lesson_status' : 'cmi.completion_status';
-
-    if (action === 'get') return this.get(cmi);
+    if (action === 'get') return this.get('lesson_status');
 
     if (action === 'set') {
       if (!value) {
         this.#trace('status failed: status value was not specified.');
         return false;
       }
-      return this.set(cmi, value);
+      return this.set('lesson_status', value);
     }
 
     this.#trace('status failed: no valid action was specified.');
@@ -374,34 +369,7 @@ export class ScormClient {
     return this.#apiHandle;
   }
 
-  // ── Private: session time ─────────────────────────────────────────────────── //
 
-  #formatSessionTime12(totalSeconds) {
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    const s = totalSeconds % 60;
-    return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
-  }
-
-  #formatSessionTime2004(totalSeconds) {
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    const s = totalSeconds % 60;
-    return `PT${h}H${m}M${s}S`;
-  }
-
-  // ── Private: utilities ───────────────────────────────────────────────────── //
-
-  #stringToBoolean(value) {
-    switch (typeof value) {
-      case 'object':
-      case 'string':  return /(true|1)/i.test(value);
-      case 'number':  return !!value;
-      case 'boolean': return value;
-      case 'undefined': return null;
-      default: return false;
-    }
-  }
 
   #trace(msg) {
     if (this.#debugActive && window.console?.log) {
