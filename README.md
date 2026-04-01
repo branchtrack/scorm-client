@@ -22,8 +22,8 @@ import ScormClient from 'scorm-client';
 const client = new ScormClient();
 
 client.init();
-client.set('cmi.core.score.raw', '85'); // SCORM 1.2
-client.status('set', 'completed');
+client.score({ raw: 85, min: 0, max: 100 });
+client.status('completed');
 client.save();
 client.quit();
 ```
@@ -172,15 +172,18 @@ client.save(); // persist now, before the user navigates away
 
 ---
 
-### `status(action, value?)` → `string | boolean`
+### `status(value?)` → `string | boolean`
 
 Shortcut for reading or writing the version-appropriate completion status field.
 
 Internally maps to `cmi.core.lesson_status` (1.2) or `cmi.completion_status` (2004).
 
+- Called with no argument → returns the current status string
+- Called with a string → sets the status, returns `true`/`false`
+
 ```js
-const current = client.status('get'); // returns e.g. 'incomplete'
-client.status('set', 'completed'); // returns true/false
+const current = client.status(); // returns e.g. 'incomplete'
+client.status('completed'); // returns true/false
 ```
 
 **Valid status values**
@@ -194,6 +197,23 @@ client.status('set', 'completed'); // returns true/false
 | `failed`        | —               |
 | `browsed`       | —               |
 | —               | `unknown`       |
+
+---
+
+### `score(value?)` → `string | boolean`
+
+Shortcut for reading or writing score fields. Abstracts the version difference between `cmi.core.score.*` (1.2) and `cmi.score.*` (2004).
+
+- Called with no argument → returns the raw score string
+- Called with a number → sets `score.raw`, returns `true`/`false`
+- Called with an object → sets each present key (`raw`, `min`, `max`, `scaled`); `scaled` is silently ignored on SCORM 1.2
+
+```js
+const raw = client.score(); // get raw score
+client.score(85); // set raw score
+client.score({ raw: 85, min: 0, max: 100 }); // set multiple fields
+client.score({ raw: 85, min: 0, max: 100, scaled: 0.85 }); // 2004: also sets scaled
+```
 
 ---
 
@@ -260,7 +280,7 @@ const learnerName = client.get('learner_name'); // same result, both forms accep
 client.set('score', '88'); // resolves per version
 
 // 4. Mark complete
-client.status('set', 'completed');
+client.status('completed');
 
 // 5. Persist and close
 client.save();
@@ -290,12 +310,12 @@ client.quit();
 
 SCORM 1.2 uses `student_*` field names; SCORM 2004 uses `learner_*`. Both short forms are accepted in either version and resolve to the correct underlying field.
 
-| Short key      | SCORM 1.2              | SCORM 2004          |
-| -------------- | ---------------------- | ------------------- |
-| `learner_id`   | `cmi.core.student_id`  | `cmi.learner_id`    |
-| `learner_name` | `cmi.core.student_name`| `cmi.learner_name`  |
-| `student_id`   | `cmi.core.student_id`  | `cmi.learner_id`    |
-| `student_name` | `cmi.core.student_name`| `cmi.learner_name`  |
+| Short key      | SCORM 1.2               | SCORM 2004         |
+| -------------- | ----------------------- | ------------------ |
+| `learner_id`   | `cmi.core.student_id`   | `cmi.learner_id`   |
+| `learner_name` | `cmi.core.student_name` | `cmi.learner_name` |
+| `student_id`   | `cmi.core.student_id`   | `cmi.learner_id`   |
+| `student_name` | `cmi.core.student_name` | `cmi.learner_name` |
 
 **Default prefix examples (no exception needed):**
 

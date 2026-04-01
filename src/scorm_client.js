@@ -87,9 +87,9 @@ export class ScormClient {
         this.#sessionStartTime = Date.now();
 
         if (this.#handleCompletionStatus) {
-          const currentStatus = this.status('get');
+          const currentStatus = this.status();
           if (currentStatus === 'not attempted' || currentStatus === 'unknown') {
-            this.status('set', 'incomplete');
+            this.status('incomplete');
             this.save();
           }
         }
@@ -247,23 +247,55 @@ export class ScormClient {
    * @param {'get'|'set'} action
    * @param {string} [value] - Required when action is 'set'.
    */
-  status(action, value = null) {
-    if (!action) {
-      this.#trace('status failed: action was not specified.');
+  status(value) {
+    if (value === undefined) return this.get('lesson_status');
+
+    if (!value) {
+      this.#trace('status failed: status value was not specified.');
       return false;
     }
 
-    if (action === 'get') return this.get('lesson_status');
+    return this.set('lesson_status', value);
+  }
 
-    if (action === 'set') {
-      if (!value) {
-        this.#trace('status failed: status value was not specified.');
-        return false;
-      }
-      return this.set('lesson_status', value);
+  // ── Score shortcut ──────────────────────────────────────────────────────── //
+
+  /**
+   * Get or set SCORM score fields.
+   *
+   * @overload
+   * @returns {string} Raw score value.
+   *
+   * @overload
+   * @param {number} value - Sets score.raw.
+   * @returns {boolean}
+   *
+   * @overload
+   * @param {{ raw?: number, min?: number, max?: number, scaled?: number }} value
+   *   Sets each present key. `scaled` is silently ignored on SCORM 1.2.
+   * @returns {boolean}
+   */
+  score(value) {
+    if (value === undefined) {
+      return this.get('score');
     }
 
-    this.#trace('status failed: no valid action was specified.');
+    if (typeof value === 'number') {
+      return this.set('score', String(value));
+    }
+
+    if (typeof value === 'object' && value !== null) {
+      let success = true;
+      if (value.raw !== undefined) success = this.set('score.raw', String(value.raw)) && success;
+      if (value.min !== undefined) success = this.set('score.min', String(value.min)) && success;
+      if (value.max !== undefined) success = this.set('score.max', String(value.max)) && success;
+      if (value.scaled !== undefined && this.#version === '2004') {
+        success = this.set('score.scaled', String(value.scaled)) && success;
+      }
+      return success;
+    }
+
+    this.#trace('score failed: invalid value type.');
     return false;
   }
 

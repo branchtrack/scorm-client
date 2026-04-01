@@ -15,25 +15,17 @@ describe('ScormClient.status (SCORM 1.2)', () => {
 
   it('get returns value via cmi.core.lesson_status', () => {
     api.LMSGetValue.mockReturnValue('completed');
-    expect(client.status('get')).toBe('completed');
+    expect(client.status()).toBe('completed');
     expect(api.LMSGetValue).toHaveBeenCalledWith('cmi.core.lesson_status');
   });
 
   it('set calls LMSSetValue with cmi.core.lesson_status', () => {
-    expect(client.status('set', 'completed')).toBe(true);
+    expect(client.status('completed')).toBe(true);
     expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.lesson_status', 'completed');
   });
 
-  it('returns false when action is falsy', () => {
+  it('returns false when status value is null', () => {
     expect(client.status(null)).toBe(false);
-  });
-
-  it('returns false when status is null on set', () => {
-    expect(client.status('set', null)).toBe(false);
-  });
-
-  it('returns false for unknown action', () => {
-    expect(client.status('invalid')).toBe(false);
   });
 });
 
@@ -50,12 +42,12 @@ describe('ScormClient.status (SCORM 2004)', () => {
 
   it('get returns value via cmi.completion_status', () => {
     api.GetValue.mockReturnValue('incomplete');
-    expect(client.status('get')).toBe('incomplete');
+    expect(client.status()).toBe('incomplete');
     expect(api.GetValue).toHaveBeenCalledWith('cmi.completion_status');
   });
 
   it('set calls SetValue with cmi.completion_status', () => {
-    client.status('set', 'completed');
+    client.status('completed');
     expect(api.SetValue).toHaveBeenCalledWith('cmi.completion_status', 'completed');
   });
 });
