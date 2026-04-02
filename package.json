@@ -25,23 +25,24 @@
   ],
   "type": "module",
   "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./utils": "./dist/utils.js"
+  },
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "build": "mkdir -p dist && babel src/scorm_client.js | terser --compress --mangle --module --output dist/index.js",
+    "build": "vite build --config vite.config.build.js",
     "lint": "eslint src/",
     "prepare": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "@babel/cli": "^7.28.6",
-    "@babel/core": "^7.29.0",
-    "@babel/preset-env": "^7.29.2",
+    "browserslist-to-esbuild": "^2.1.1",
     "chai": "^6.2.2",
     "jsdom": "^29.0.1",
-    "terser": "^5.46.1",
     "vite": "^8.0.3",
     "vitest": "^4.1.2"
   },

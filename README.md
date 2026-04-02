@@ -277,9 +277,9 @@ Maps to `cmi.core.success_status` (1.2) or `cmi.success_status` (2004).
 - Called with a string → sets the value directly
 
 ```js
-client.success(true);        // sets 'passed'
-client.success(false);       // sets 'failed'
-client.success('unknown');   // sets directly
+client.success(true); // sets 'passed'
+client.success(false); // sets 'failed'
+client.success('unknown'); // sets directly
 const result = client.success(); // → 'passed' / 'failed' / 'unknown'
 ```
 
@@ -418,7 +418,7 @@ client.set('exit', 'suspend'); // → cmi.core.exit (1.2) / cmi.exit (2004)
 
 ## Browser support
 
-Compiled with Babel targeting:
+Built with Vite (Oxc) targeting ES2015+. Supports all modern browsers:
 
 - Last 2 Chrome versions
 - Last 2 Edge versions
