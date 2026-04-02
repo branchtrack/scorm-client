@@ -22,8 +22,10 @@ import ScormClient from 'scorm-client';
 const client = new ScormClient();
 
 client.init();
+const saved = client.resume();         // restore previous session state
 client.score({ raw: 85, min: 0, max: 100 });
 client.status('completed');
+client.suspend({ page: 3 });           // persist state for next session
 client.save();
 client.quit();
 ```
@@ -217,6 +219,33 @@ client.score({ raw: 85, min: 0, max: 100, scaled: 0.85 }); // 2004: also sets sc
 
 ---
 
+### `suspend(data)` → `boolean`
+
+Serializes data and writes it to `cmi.suspend_data`. Strings are stored as-is; any other value is `JSON.stringify`'d first.
+
+```js
+client.suspend({ page: 3, answers: [1, 0, 2] }); // stored as JSON string
+client.suspend('raw string');                      // stored as-is
+```
+
+---
+
+### `resume()` → `any | null`
+
+Reads `cmi.suspend_data` and attempts to parse it as JSON.
+
+- Returns `null` if the field is empty
+- Returns the parsed value if the content is valid JSON
+- Returns the raw string if JSON parsing fails
+
+```js
+client.suspend({ page: 3 });
+// ... later session ...
+const state = client.resume(); // → { page: 3 }
+```
+
+---
+
 ### `getLastError()` → `number`
 
 Returns the last LMS error code as an integer. Returns `0` if there is no error or the API is unavailable.
@@ -276,13 +305,17 @@ const studentName = client.get('student_name'); // cmi.core.student_name (1.2) /
 // or equivalently:
 const learnerName = client.get('learner_name'); // same result, both forms accepted
 
-// 3. Update progress
+// 3. Restore saved state
+const saved = client.resume(); // null on first launch, object on return
+
+// 4. Update progress
 client.set('score', '88'); // resolves per version
 
-// 4. Mark complete
+// 5. Mark complete
 client.status('completed');
 
-// 5. Persist and close
+// 6. Persist state and close
+client.suspend({ page: 5, completed: true });
 client.save();
 client.quit();
 ```

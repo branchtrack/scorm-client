@@ -299,6 +299,32 @@ export class ScormClient {
     return false;
   }
 
+  // ── Suspend data helpers ─────────────────────────────────────────────────── //
+
+  /**
+   * Serialize and store data in cmi.suspend_data.
+   * @param {string|object} data - String stored as-is; anything else is JSON.stringify'd.
+   * @returns {boolean}
+   */
+  suspend(data) {
+    const raw = typeof data === 'string' ? data : JSON.stringify(data);
+    return this.set('suspend_data', raw);
+  }
+
+  /**
+   * Retrieve and deserialize cmi.suspend_data.
+   * @returns {any|null} Parsed JSON if possible, raw string if not, null if empty.
+   */
+  resume() {
+    const raw = this.get('suspend_data');
+    if (!raw || raw === 'null') return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return raw;
+    }
+  }
+
   // ── Debug ────────────────────────────────────────────────────────────────── //
 
   /** Returns the last LMS error code as an integer. */
