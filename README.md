@@ -180,12 +180,15 @@ Shortcut for reading or writing the version-appropriate completion status field.
 
 Internally maps to `cmi.core.lesson_status` (1.2) or `cmi.completion_status` (2004).
 
+`completion()` is an alias — both methods are identical.
+
 - Called with no argument → returns the current status string
 - Called with a string → sets the status, returns `true`/`false`
 
 ```js
 const current = client.status(); // returns e.g. 'incomplete'
-client.status('completed'); // returns true/false
+client.status('completed');
+client.completion('completed'); // same as above
 ```
 
 **Valid status values**
@@ -258,6 +261,26 @@ Maps to `cmi.core.lesson_location` (1.2) or `cmi.location` (2004).
 ```js
 const bookmark = client.location(); // get current position
 client.location('slide-12'); // save position
+```
+
+---
+
+### `success(value?)` → `string | boolean`
+
+Shortcut for reading or writing the version-appropriate success status field.
+
+Maps to `cmi.core.success_status` (1.2) or `cmi.success_status` (2004).
+
+- Called with no argument → returns the current value string (`'passed'`, `'failed'`, or `'unknown'`)
+- Called with `true` → sets `'passed'`
+- Called with `false` → sets `'failed'`
+- Called with a string → sets the value directly
+
+```js
+client.success(true);        // sets 'passed'
+client.success(false);       // sets 'failed'
+client.success('unknown');   // sets directly
+const result = client.success(); // → 'passed' / 'failed' / 'unknown'
 ```
 
 ---

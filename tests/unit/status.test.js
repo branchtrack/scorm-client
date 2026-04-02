@@ -51,3 +51,25 @@ describe('ScormClient.status (SCORM 2004)', () => {
     expect(api.SetValue).toHaveBeenCalledWith('cmi.completion_status', 'completed');
   });
 });
+
+describe('ScormClient.completion (alias for status)', () => {
+  it('completion() delegates to status() — SCORM 1.2', () => {
+    const api = mockApi12();
+    window.API = api;
+    const client = new ScormClient({ version: '1.2' });
+    client.init();
+    client.completion('completed');
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.lesson_status', 'completed');
+    delete window.API;
+  });
+
+  it('completion() delegates to status() — SCORM 2004', () => {
+    const api = mockApi2004();
+    window.API_1484_11 = api;
+    const client = new ScormClient({ version: '2004' });
+    client.init();
+    client.completion('completed');
+    expect(api.SetValue).toHaveBeenCalledWith('cmi.completion_status', 'completed');
+    delete window.API_1484_11;
+  });
+});

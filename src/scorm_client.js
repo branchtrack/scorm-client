@@ -258,6 +258,30 @@ export class ScormClient {
     return this.set('lesson_status', value);
   }
 
+  /** Alias for {@link status}. */
+  completion(value) { return this.status(value); }
+
+  // ── Success shortcut ─────────────────────────────────────────────────────── //
+
+  /**
+   * Get or set the SCORM success status.
+   * Maps to cmi.core.success_status (1.2) or cmi.success_status (2004).
+   *
+   * - Called with no argument → returns the current value string
+   * - Called with true/false  → sets 'passed' / 'failed'
+   * - Called with a string    → sets the value directly
+   *
+   * @param {boolean|string} [value]
+   * @returns {string|boolean}
+   */
+  success(value) {
+    if (value === undefined) return this.get('success_status');
+    if (value === true)  return this.set('success_status', 'passed');
+    if (value === false) return this.set('success_status', 'failed');
+
+    return this.set('success_status', value);
+  }
+
   // ── Location shortcut ────────────────────────────────────────────────────── //
 
   /**
@@ -268,6 +292,7 @@ export class ScormClient {
    */
   location(value) {
     if (value === undefined) return this.get('location');
+
     return this.set('location', value);
   }
 
@@ -309,6 +334,7 @@ export class ScormClient {
     }
 
     this.#trace('score failed: invalid value type.');
+
     return false;
   }
 
@@ -321,6 +347,7 @@ export class ScormClient {
    */
   suspend(data) {
     const raw = typeof data === 'string' ? data : JSON.stringify(data);
+
     return this.set('suspend_data', raw);
   }
 
@@ -330,7 +357,9 @@ export class ScormClient {
    */
   resume() {
     const raw = this.get('suspend_data');
+
     if (!raw || raw === 'null') return null;
+
     try {
       return JSON.parse(raw);
     } catch {
@@ -408,6 +437,7 @@ export class ScormClient {
     if (win.API)         { this.#version = '1.2';  return win.API; }
 
     this.#trace(`API.find: no API found after ${attempts} attempts.`);
+
     return null;
   }
 
