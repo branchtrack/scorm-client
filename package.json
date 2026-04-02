@@ -1,39 +1,50 @@
 {
-  "name": "scorm-client",
-  "version": "1.2026.0",
+  "name": "@branchtrack/scorm-client",
+  "version": "1.0.0",
   "description": "The SCORM API Client",
-  "main": "dist/index.js",
-  "type": "module",
-  "scripts": {
-    "build": "mkdir -p dist && babel src/scorm_client.js | terser --compress --mangle --module --output dist/index.js",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "lint": "eslint src/",
-    "prepare": "npm run build"
-  },
-  "devDependencies": {
-    "@babel/cli": "^7.28.6",
-    "@babel/core": "^7.29.0",
-    "@babel/preset-env": "^7.29.2",
-    "jsdom": "^29.0.1",
-    "terser": "^5.46.1",
-    "vitest": "^4.1.2"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/branchtrack/scorm-client.git"
-  },
   "keywords": [
     "SCORM",
     "elearning",
     "lms"
   ],
-  "author": "Philip Hutchison (pipwerks)",
-  "license": "MIT",
+  "homepage": "https://github.com/branchtrack/scorm-client",
   "bugs": {
-    "url": "https://github.com/pipwerks/scorm-api-wrapper/issues"
+    "url": "https://github.com/branchtrack/scorm-client/issues"
   },
-  "homepage": "https://github.com/pipwerks/scorm-api-wrapper",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/branchtrack/scorm-client.git"
+  },
+  "license": "MIT",
+  "author": "Sergey Margaritov (attenzione)",
+  "contributors": [
+    {
+      "name": "Philip Hutchison (pipwerks)",
+      "url": "https://github.com/pipwerks/scorm-api-wrapper"
+    }
+  ],
+  "type": "module",
+  "main": "dist/index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "mkdir -p dist && babel src/scorm_client.js | terser --compress --mangle --module --output dist/index.js",
+    "lint": "eslint src/",
+    "prepare": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.28.6",
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.2",
+    "chai": "^6.2.2",
+    "jsdom": "^29.0.1",
+    "terser": "^5.46.1",
+    "vite": "^8.0.3",
+    "vitest": "^4.1.2"
+  },
   "engines": {
     "node": ">=18"
   }
