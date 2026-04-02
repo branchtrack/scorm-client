@@ -40,7 +40,6 @@
   },
   "scripts": {
     "build": "vite build --config vite.config.build.js",
-    "lint": "eslint src/",
     "prepublishOnly": "npm run build",
     "release": "release-it",
     "release:minor": "release-it minor",
