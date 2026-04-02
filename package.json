@@ -25,6 +25,12 @@
   ],
   "type": "module",
   "main": "dist/index.js",
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
   "exports": {
     ".": "./dist/index.js",
     "./utils": "./dist/utils.js"
@@ -35,7 +41,10 @@
   "scripts": {
     "build": "vite build --config vite.config.build.js",
     "lint": "eslint src/",
-    "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
+    "release": "release-it",
+    "release:minor": "release-it minor",
+    "release:major": "release-it major",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -43,6 +52,7 @@
     "browserslist-to-esbuild": "^2.1.1",
     "chai": "^6.2.2",
     "jsdom": "^29.0.1",
+    "release-it": "^19.2.4",
     "vite": "^8.0.3",
     "vitest": "^4.1.2"
   },
