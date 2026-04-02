@@ -18,10 +18,11 @@ export function normalizeField(version, key) {
 
   const exceptions = {
     '1.2': {
-      suspend_data: 'cmi.suspend_data',
-      score:        'cmi.core.score.raw',
-      learner_id:   'cmi.core.student_id',
-      learner_name: 'cmi.core.student_name',
+      suspend_data:    'cmi.suspend_data',
+      score:           'cmi.core.score.raw',
+      location:        'cmi.core.lesson_location',
+      learner_id:      'cmi.core.student_id',
+      learner_name:    'cmi.core.student_name',
     },
     '2004': {
       score:           'cmi.score.raw',

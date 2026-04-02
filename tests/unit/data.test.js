@@ -180,6 +180,11 @@ describe('normalizeField — SCORM 1.2 (via get)', () => {
     expect(api.LMSGetValue).toHaveBeenCalledWith('cmi.core.lesson_location');
   });
 
+  it('location → cmi.core.lesson_location (alias)', () => {
+    client.get('location');
+    expect(api.LMSGetValue).toHaveBeenCalledWith('cmi.core.lesson_location');
+  });
+
   it('suspend_data → cmi.suspend_data', () => {
     client.get('suspend_data');
     expect(api.LMSGetValue).toHaveBeenCalledWith('cmi.suspend_data');

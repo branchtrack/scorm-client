@@ -258,6 +258,19 @@ export class ScormClient {
     return this.set('lesson_status', value);
   }
 
+  // ── Location shortcut ────────────────────────────────────────────────────── //
+
+  /**
+   * Get or set the learner's bookmark location.
+   * Maps to cmi.core.lesson_location (1.2) or cmi.location (2004).
+   * @param {string} [value]
+   * @returns {string|boolean}
+   */
+  location(value) {
+    if (value === undefined) return this.get('location');
+    return this.set('location', value);
+  }
+
   // ── Score shortcut ──────────────────────────────────────────────────────── //
 
   /**

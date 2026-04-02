@@ -22,10 +22,10 @@ import ScormClient from 'scorm-client';
 const client = new ScormClient();
 
 client.init();
-const saved = client.resume();         // restore previous session state
+const saved = client.resume(); // restore previous session state
 client.score({ raw: 85, min: 0, max: 100 });
 client.status('completed');
-client.suspend({ page: 3 });           // persist state for next session
+client.suspend({ page: 3 }); // persist state for next session
 client.save();
 client.quit();
 ```
@@ -225,7 +225,7 @@ Serializes data and writes it to `cmi.suspend_data`. Strings are stored as-is; a
 
 ```js
 client.suspend({ page: 3, answers: [1, 0, 2] }); // stored as JSON string
-client.suspend('raw string');                      // stored as-is
+client.suspend('raw string'); // stored as-is
 ```
 
 ---
@@ -242,6 +242,22 @@ Reads `cmi.suspend_data` and attempts to parse it as JSON.
 client.suspend({ page: 3 });
 // ... later session ...
 const state = client.resume(); // → { page: 3 }
+```
+
+---
+
+### `location(value?)` → `string | boolean`
+
+Shortcut for reading or writing the learner's bookmark position.
+
+Maps to `cmi.core.lesson_location` (1.2) or `cmi.location` (2004).
+
+- Called with no argument → returns the current location string
+- Called with a string → sets the location, returns `true`/`false`
+
+```js
+const bookmark = client.location(); // get current position
+client.location('slide-12'); // save position
 ```
 
 ---
@@ -314,7 +330,8 @@ client.set('score', '88'); // resolves per version
 // 5. Mark complete
 client.status('completed');
 
-// 6. Persist state and close
+// 6. Save bookmark and close
+client.location('slide-12');
 client.suspend({ page: 5, completed: true });
 client.save();
 client.quit();
@@ -337,6 +354,7 @@ client.quit();
 | `score`           | `cmi.core.score.raw`       | `cmi.score.raw`         |
 | `lesson_status`   | `cmi.core.lesson_status`   | `cmi.completion_status` |
 | `lesson_location` | `cmi.core.lesson_location` | `cmi.location`          |
+| `location`        | `cmi.core.lesson_location` | `cmi.location`          |
 | `suspend_data`    | `cmi.suspend_data`         | `cmi.suspend_data`      |
 
 **Cross-version learner identity aliases:**

@@ -28,6 +28,10 @@ describe('normalizeField — SCORM 1.2', () => {
     expect(normalizeField('1.2', 'lesson_location')).toBe('cmi.core.lesson_location');
   });
 
+  it('exception: location -> cmi.core.lesson_location', () => {
+    expect(normalizeField('1.2', 'location')).toBe('cmi.core.lesson_location');
+  });
+
   it('default prefix: session_time -> cmi.core.session_time', () => {
     expect(normalizeField('1.2', 'session_time')).toBe('cmi.core.session_time');
   });
@@ -60,6 +64,10 @@ describe('normalizeField — SCORM 2004', () => {
 
   it('exception: lesson_location -> cmi.location', () => {
     expect(normalizeField('2004', 'lesson_location')).toBe('cmi.location');
+  });
+
+  it('default prefix: location -> cmi.location', () => {
+    expect(normalizeField('2004', 'location')).toBe('cmi.location');
   });
 
   it('suspend_data -> cmi.suspend_data (default prefix, same as 1.2)', () => {
