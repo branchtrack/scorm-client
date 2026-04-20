@@ -87,12 +87,12 @@ describe('ScormClient.quit (SCORM 1.2)', () => {
     expect(client.isActive).toBe(false);
   });
 
-  it('sets exit to "logout" when completed', () => {
+  it('sets exit to "" (empty) when completed', () => {
+    api.LMSGetValue.mockReturnValue('completed');
     const client = new ScormClient({ version: '1.2' });
     client.init();
-    client.set('cmi.core.lesson_status', 'completed');
     client.quit();
-    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.exit', 'logout');
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.exit', '');
   });
 
   it('returns false when not active', () => {
@@ -118,9 +118,9 @@ describe('ScormClient.quit (SCORM 2004)', () => {
   });
 
   it('sets exit to "normal" when completed', () => {
+    api.GetValue.mockReturnValue('completed');
     const client = new ScormClient({ version: '2004' });
     client.init();
-    client.set('cmi.completion_status', 'completed');
     client.quit();
     expect(api.SetValue).toHaveBeenCalledWith('cmi.exit', 'normal');
   });

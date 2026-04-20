@@ -73,6 +73,7 @@ describe('ScormClient.score (SCORM 2004)', () => {
   });
 
   it('score({ raw }) — partial object sets only raw', () => {
+    api.SetValue.mockClear(); // clear calls from init() in beforeEach
     client.score({ raw: 42 });
     expect(api.SetValue).toHaveBeenCalledTimes(1);
     expect(api.SetValue).toHaveBeenCalledWith('cmi.score.raw', '42');

@@ -23,12 +23,12 @@ describe('ScormClient.get (SCORM 1.2)', () => {
 describe('ScormClient.get — inactive connection (SCORM 1.2)', () => {
   afterEach(() => { delete window.API; });
 
-  it('returns "null" string and does not call LMSGetValue', () => {
+  it('returns empty string and does not call LMSGetValue', () => {
     const api = mockApi12();
     window.API = api;
     const inactive = new ScormClient({ version: '1.2' });
     // not calling init() — connection stays inactive
-    expect(inactive.get('cmi.core.lesson_status')).toBe('null');
+    expect(inactive.get('cmi.core.lesson_status')).toBe('');
     expect(api.LMSGetValue).not.toHaveBeenCalled();
   });
 });
@@ -69,6 +69,7 @@ describe('ScormClient.set (SCORM 1.2)', () => {
 
   it('returns false when connection is inactive', () => {
     const inactive = new ScormClient({ version: '1.2' });
+    api.LMSSetValue.mockClear(); // clear calls from init() in beforeEach
     expect(inactive.set('cmi.core.score.raw', '85')).toBe(false);
     expect(api.LMSSetValue).not.toHaveBeenCalled();
   });
@@ -109,6 +110,7 @@ describe('ScormClient.save (SCORM 1.2)', () => {
 
   it('returns false when connection is inactive', () => {
     const inactive = new ScormClient({ version: '1.2' });
+    api.LMSCommit.mockClear(); // clear calls from init() in beforeEach
     expect(inactive.save()).toBe(false);
     expect(api.LMSCommit).not.toHaveBeenCalled();
   });

@@ -14,24 +14,24 @@ describe('ScormClient.success (SCORM 1.2)', () => {
 
   afterEach(() => { delete window.API; });
 
-  it('success() get calls cmi.core.success_status', () => {
+  it('success() get calls cmi.core.lesson_status (SCORM 1.2 has no separate success_status)', () => {
     client.success();
-    expect(api.LMSGetValue).toHaveBeenCalledWith('cmi.core.success_status');
+    expect(api.LMSGetValue).toHaveBeenCalledWith('cmi.core.lesson_status');
   });
 
-  it('success(true) sets "passed"', () => {
+  it('success(true) sets "passed" on lesson_status', () => {
     client.success(true);
-    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.success_status', 'passed');
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.lesson_status', 'passed');
   });
 
-  it('success(false) sets "failed"', () => {
+  it('success(false) sets "failed" on lesson_status', () => {
     client.success(false);
-    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.success_status', 'failed');
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.lesson_status', 'failed');
   });
 
-  it('success(string) sets value directly', () => {
+  it('success(string) sets value directly on lesson_status', () => {
     client.success('unknown');
-    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.success_status', 'unknown');
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.lesson_status', 'unknown');
   });
 
   it('success(true) returns true on success', () => {

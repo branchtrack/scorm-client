@@ -84,11 +84,11 @@ export class ScormClient {
       const errorCode = this.getLastError();
       if (errorCode === 0) {
         this.#connectionActive = true;
-        this.#sessionStartTime = Date.now();
+        this.#sessionStartTime = performance.now();
 
         if (this.#handleCompletionStatus) {
           const currentStatus = this.status();
-          if (currentStatus === 'not attempted' || currentStatus === 'unknown') {
+          if (!currentStatus || currentStatus === 'not attempted' || currentStatus === 'unknown') {
             this.status('incomplete');
             this.save();
           }
@@ -122,19 +122,20 @@ export class ScormClient {
       return false;
     }
 
-    if (this.#handleExitMode && !this.#exitStatus) {
-      const finished = this.#completionStatus === 'completed' || this.#completionStatus === 'passed';
-      this.set('exit', finished ? (this.#version === '1.2' ? 'logout' : 'normal') : 'suspend');
+    if (this.#handleExitMode && this.#exitStatus === null) {
+      const liveStatus = this.get('lesson_status');
+      const finished = liveStatus === 'completed' || liveStatus === 'passed';
+      this.set('exit', finished ? (this.#version === '1.2' ? '' : 'normal') : 'suspend');
     }
 
     // Write session time before committing.
-    if (this.#handleSessionTime && this.#sessionStartTime) {
-      const elapsedSeconds = Math.round((Date.now() - this.#sessionStartTime) / 1000);
+    if (this.#handleSessionTime && this.#sessionStartTime !== null) {
+      const elapsedSeconds = Math.max(0, Math.round((performance.now() - this.#sessionStartTime) / 1000));
       this.set('session_time', formatSessionTime(this.#version, elapsedSeconds));
     }
 
-    // SCORM 1.2 requires an explicit commit before LMSFinish; 2004 commits implicitly on Terminate.
-    const saved = this.#version === '1.2' ? this.save() : true;
+    // Commit before Terminate for both SCORM versions.
+    const saved = this.save();
     if (!saved) return false;
 
     const success =
@@ -161,13 +162,13 @@ export class ScormClient {
 
     if (!this.#connectionActive) {
       this.#trace(`data.get('${parameter}') failed: API connection is inactive.`);
-      return String(null);
+      return '';
     }
 
     const api = this.#getApiHandle();
     if (!api) {
       this.#trace(`data.get('${parameter}') failed: API is null.`);
-      return String(null);
+      return '';
     }
 
     const value =
@@ -205,14 +206,19 @@ export class ScormClient {
       return false;
     }
 
+    const stringValue = value == null ? '' : String(value);
+
     const success =
       this.#version === '1.2'
-        ? stringToBoolean(api.LMSSetValue(parameter, value))
-        : stringToBoolean(api.SetValue(parameter, value));
+        ? stringToBoolean(api.LMSSetValue(parameter, stringValue))
+        : stringToBoolean(api.SetValue(parameter, stringValue));
 
     if (success) {
       if (parameter === 'cmi.core.lesson_status' || parameter === 'cmi.completion_status') {
-        this.#completionStatus = value;
+        this.#completionStatus = stringValue;
+      }
+      if (parameter === 'cmi.core.exit' || parameter === 'cmi.exit') {
+        this.#exitStatus = stringValue;
       }
     } else {
       const errorCode = this.getLastError();
@@ -275,10 +281,17 @@ export class ScormClient {
    * @returns {string|boolean}
    */
   success(value) {
+    // SCORM 1.2 has no separate success_status field; pass/fail lives in lesson_status.
+    if (this.#version === '1.2') {
+      if (value === undefined) return this.get('lesson_status');
+      if (value === true)  return this.set('lesson_status', 'passed');
+      if (value === false) return this.set('lesson_status', 'failed');
+      return this.set('lesson_status', value);
+    }
+
     if (value === undefined) return this.get('success_status');
     if (value === true)  return this.set('success_status', 'passed');
     if (value === false) return this.set('success_status', 'failed');
-
     return this.set('success_status', value);
   }
 
@@ -323,13 +336,19 @@ export class ScormClient {
     }
 
     if (typeof value === 'object' && value !== null) {
-      let success = true;
-      if (value.raw !== undefined) success = this.set('score.raw', String(value.raw)) && success;
-      if (value.min !== undefined) success = this.set('score.min', String(value.min)) && success;
-      if (value.max !== undefined) success = this.set('score.max', String(value.max)) && success;
-      if (value.scaled !== undefined && this.#version === '2004') {
-        success = this.set('score.scaled', String(value.scaled)) && success;
+      const hasRaw    = value.raw    !== undefined;
+      const hasMin    = value.min    !== undefined;
+      const hasMax    = value.max    !== undefined;
+      const hasScaled = value.scaled !== undefined && this.#version === '2004';
+      if (!hasRaw && !hasMin && !hasMax && !hasScaled) {
+        this.#trace('score failed: no score fields provided.');
+        return false;
       }
+      let success = true;
+      if (hasRaw)    success = this.set('score.raw',    String(value.raw))    && success;
+      if (hasMin)    success = this.set('score.min',    String(value.min))    && success;
+      if (hasMax)    success = this.set('score.max',    String(value.max))    && success;
+      if (hasScaled) success = this.set('score.scaled', String(value.scaled)) && success;
       return success;
     }
 
@@ -346,7 +365,22 @@ export class ScormClient {
    * @returns {boolean}
    */
   suspend(data) {
-    const raw = typeof data === 'string' ? data : JSON.stringify(data);
+    let raw;
+    if (typeof data === 'string') {
+      raw = data;
+    } else {
+      try {
+        raw = JSON.stringify(data);
+      } catch (e) {
+        this.#trace(`suspend failed: could not serialize data. ${e.message}`);
+        return false;
+      }
+    }
+
+    const maxLen = this.#version === '1.2' ? 4096 : 64000;
+    if (raw.length > maxLen) {
+      this.#trace(`suspend: data length ${raw.length} exceeds SCORM ${this.#version ?? '?'} limit of ${maxLen} characters.`);
+    }
 
     return this.set('suspend_data', raw);
   }
@@ -360,11 +394,15 @@ export class ScormClient {
 
     if (!raw || raw === 'null') return null;
 
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return raw;
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      try {
+        return JSON.parse(trimmed);
+      } catch {
+        // Not valid JSON; return as raw string.
+      }
     }
+    return raw;
   }
 
   // ── Debug ────────────────────────────────────────────────────────────────── //
@@ -407,8 +445,8 @@ export class ScormClient {
 
     return String(
       this.#version === '1.2'
-        ? api.LMSGetDiagnostic(errorCode)
-        : api.GetDiagnostic(errorCode)
+        ? api.LMSGetDiagnostic(String(errorCode))
+        : api.GetDiagnostic(String(errorCode))
     );
   }
 
@@ -418,13 +456,17 @@ export class ScormClient {
     let attempts = 0;
     const limit = 500;
 
-    while (
-      !win.API && !win.API_1484_11 &&
-      win.parent && win.parent !== win &&
-      attempts <= limit
-    ) {
-      attempts++;
-      win = win.parent;
+    try {
+      while (
+        !win.API && !win.API_1484_11 &&
+        win.parent && win.parent !== win &&
+        attempts < limit
+      ) {
+        attempts++;
+        win = win.parent;
+      }
+    } catch {
+      // Cross-origin frame boundary; stop traversal at the last accessible window.
     }
 
     if (this.#version) {
@@ -448,10 +490,11 @@ export class ScormClient {
       api = this.#findApi(window.parent);
     }
     if (!api && window.top?.opener) {
-      api = this.#findApi(window.top.opener);
-    }
-    if (!api && window.top?.opener?.document) {
-      api = this.#findApi(window.top.opener.document);
+      try {
+        api = this.#findApi(window.top.opener);
+      } catch {
+        // Cross-origin opener; skip.
+      }
     }
 
     if (api) {

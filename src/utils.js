@@ -19,6 +19,7 @@ export function normalizeField(version, key) {
   const exceptions = {
     '1.2': {
       suspend_data:    'cmi.suspend_data',
+      launch_data:     'cmi.launch_data',
       score:           'cmi.core.score.raw',
       location:        'cmi.core.lesson_location',
       learner_id:      'cmi.core.student_id',
@@ -51,7 +52,7 @@ export function normalizeField(version, key) {
 export function stringToBoolean(value) {
   switch (typeof value) {
     case 'object':
-    case 'string':  return /(true|1)/i.test(value);
+    case 'string':  return /^(true|1)$/i.test(value);
     case 'number':  return !!value;
     case 'boolean': return value;
     case 'undefined': return null;
@@ -72,6 +73,7 @@ export function stringToBoolean(value) {
  * @returns {string}
  */
 export function formatSessionTime(version, totalSeconds) {
+  totalSeconds = Math.max(0, totalSeconds);
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = totalSeconds % 60;
