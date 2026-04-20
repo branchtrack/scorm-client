@@ -98,7 +98,7 @@ describe('ScormClient.getDiagnosticInfo (SCORM 1.2)', () => {
   it('calls LMSGetDiagnostic and returns result', () => {
     api.LMSGetDiagnostic.mockReturnValue('Diagnostic info');
     expect(client.getDiagnosticInfo(201)).toBe('Diagnostic info');
-    expect(api.LMSGetDiagnostic).toHaveBeenCalledWith(201);
+    expect(api.LMSGetDiagnostic).toHaveBeenCalledWith('201');
   });
 });
 
@@ -116,6 +116,6 @@ describe('ScormClient.getDiagnosticInfo (SCORM 2004)', () => {
   it('calls GetDiagnostic and returns result', () => {
     api.GetDiagnostic.mockReturnValue('Diagnostic detail');
     expect(client.getDiagnosticInfo(101)).toBe('Diagnostic detail');
-    expect(api.GetDiagnostic).toHaveBeenCalledWith(101);
+    expect(api.GetDiagnostic).toHaveBeenCalledWith('101');
   });
 });

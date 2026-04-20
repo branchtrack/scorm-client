@@ -134,15 +134,16 @@ export class ScormClient {
     }
 
     // SCORM 1.2 requires an explicit commit before LMSFinish; 2004 commits implicitly on Terminate.
+    // If the commit fails, still proceed to terminate so the session is closed cleanly —
+    // but surface the failure by returning false at the end.
     const saved = this.#version === '1.2' ? this.save() : true;
-    if (!saved) return false;
 
-    const success =
+    const terminated =
       this.#version === '1.2'
         ? stringToBoolean(api.LMSFinish(''))
         : stringToBoolean(api.Terminate(''));
 
-    if (success) {
+    if (terminated) {
       this.#connectionActive = false;
       this.#sessionStartTime = null;
     } else {
@@ -150,7 +151,7 @@ export class ScormClient {
       this.#trace(`connection.terminate failed. Error code: ${errorCode} | Info: ${this.getErrorInfo(errorCode)}`);
     }
 
-    return success;
+    return saved && terminated;
   }
 
   // ── Data ─────────────────────────────────────────────────────────────────── //
@@ -214,6 +215,9 @@ export class ScormClient {
       if (parameter === 'cmi.core.lesson_status' || parameter === 'cmi.completion_status') {
         this.#completionStatus = value;
       }
+      if (parameter === 'cmi.core.exit' || parameter === 'cmi.exit') {
+        this.#exitStatus = value;
+      }
     } else {
       const errorCode = this.getLastError();
       this.#trace(`data.set('${parameter}') failed. Error code: ${errorCode} | Info: ${this.getErrorInfo(errorCode)}`);
@@ -265,7 +269,11 @@ export class ScormClient {
 
   /**
    * Get or set the SCORM success status.
-   * Maps to cmi.core.success_status (1.2) or cmi.success_status (2004).
+   *
+   * SCORM 2004 → maps to `cmi.success_status` (a distinct field).
+   * SCORM 1.2  → maps to `cmi.core.lesson_status`, since 1.2 has no separate
+   *              success field and instead stores `passed`/`failed` in the
+   *              single `lesson_status` element.
    *
    * - Called with no argument → returns the current value string
    * - Called with true/false  → sets 'passed' / 'failed'
@@ -275,11 +283,13 @@ export class ScormClient {
    * @returns {string|boolean}
    */
   success(value) {
-    if (value === undefined) return this.get('success_status');
-    if (value === true)  return this.set('success_status', 'passed');
-    if (value === false) return this.set('success_status', 'failed');
+    const key = this.#version === '1.2' ? 'lesson_status' : 'success_status';
 
-    return this.set('success_status', value);
+    if (value === undefined) return this.get(key);
+    if (value === true)  return this.set(key, 'passed');
+    if (value === false) return this.set(key, 'failed');
+
+    return this.set(key, value);
   }
 
   // ── Location shortcut ────────────────────────────────────────────────────── //
@@ -407,34 +417,46 @@ export class ScormClient {
 
     return String(
       this.#version === '1.2'
-        ? api.LMSGetDiagnostic(errorCode)
-        : api.GetDiagnostic(errorCode)
+        ? api.LMSGetDiagnostic(String(errorCode))
+        : api.GetDiagnostic(String(errorCode))
     );
   }
 
   // ── Private: API discovery ───────────────────────────────────────────────── //
+
+  /**
+   * Safely read a property from a window reference. Cross-origin access
+   * throws a SecurityError; we swallow those so iframe traversal never
+   * crashes the caller.
+   */
+  #safeGet(win, key) {
+    try { return win?.[key]; } catch { return undefined; }
+  }
 
   #findApi(win) {
     let attempts = 0;
     const limit = 500;
 
     while (
-      !win.API && !win.API_1484_11 &&
-      win.parent && win.parent !== win &&
+      this.#safeGet(win, 'API') === undefined &&
+      this.#safeGet(win, 'API_1484_11') === undefined &&
+      this.#safeGet(win, 'parent') &&
+      this.#safeGet(win, 'parent') !== win &&
       attempts <= limit
     ) {
       attempts++;
       win = win.parent;
     }
 
-    if (this.#version) {
-      if (this.#version === '2004') return win.API_1484_11 ?? null;
-      if (this.#version === '1.2')  return win.API ?? null;
-      return null;
-    }
+    const api2004 = this.#safeGet(win, 'API_1484_11');
+    const api12   = this.#safeGet(win, 'API');
 
-    if (win.API_1484_11) { this.#version = '2004'; return win.API_1484_11; }
-    if (win.API)         { this.#version = '1.2';  return win.API; }
+    if (this.#version === '2004') return api2004 ?? null;
+    if (this.#version === '1.2')  return api12   ?? null;
+
+    // Auto-detect: prefer 2004 when both are present.
+    if (api2004) { this.#version = '2004'; return api2004; }
+    if (api12)   { this.#version = '1.2';  return api12; }
 
     this.#trace(`API.find: no API found after ${attempts} attempts.`);
 
@@ -444,14 +466,14 @@ export class ScormClient {
   #getApi() {
     let api = this.#findApi(window);
 
-    if (!api && window.parent && window.parent !== window) {
-      api = this.#findApi(window.parent);
+    const parent = this.#safeGet(window, 'parent');
+    if (!api && parent && parent !== window) {
+      api = this.#findApi(parent);
     }
-    if (!api && window.top?.opener) {
-      api = this.#findApi(window.top.opener);
-    }
-    if (!api && window.top?.opener?.document) {
-      api = this.#findApi(window.top.opener.document);
+
+    const opener = this.#safeGet(this.#safeGet(window, 'top'), 'opener');
+    if (!api && opener) {
+      api = this.#findApi(opener);
     }
 
     if (api) {

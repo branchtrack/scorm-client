@@ -44,3 +44,25 @@ describe('ScormClient API detection (SCORM 2004)', () => {
     expect(client.version).toBe('2004');
   });
 });
+
+describe('ScormClient API detection — cross-origin parent', () => {
+  afterEach(() => { delete window.API; });
+
+  it('does not throw when parent window access raises SecurityError', () => {
+    // Simulate a hostile parent that throws on every property read.
+    const hostileParent = new Proxy({}, {
+      get() { throw new Error('SecurityError: cross-origin blocked'); },
+    });
+    const originalParent = Object.getOwnPropertyDescriptor(window, 'parent');
+    Object.defineProperty(window, 'parent', { value: hostileParent, configurable: true });
+    window.API = mockApi12();
+
+    const client = new ScormClient();
+    expect(() => client.init()).not.toThrow();
+    expect(client.version).toBe('1.2');
+
+    // Restore.
+    if (originalParent) Object.defineProperty(window, 'parent', originalParent);
+    else delete window.parent;
+  });
+});

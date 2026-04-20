@@ -107,6 +107,11 @@ describe('stringToBoolean', () => {
   it('1 -> true', () => expect(stringToBoolean(1)).toBe(true));
   it('0 -> false', () => expect(stringToBoolean(0)).toBe(false));
   it('undefined -> null', () => expect(stringToBoolean(undefined)).toBe(null));
+  it('"" -> false', () => expect(stringToBoolean('')).toBe(false));
+  it('"truthy" -> false (anchored — substring match is not enough)', () => {
+    expect(stringToBoolean('truthy')).toBe(false);
+    expect(stringToBoolean('a1b')).toBe(false);
+  });
 });
 
 // ── formatSessionTime ────────────────────────────────────────────────────── //

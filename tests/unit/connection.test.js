@@ -100,6 +100,27 @@ describe('ScormClient.quit (SCORM 1.2)', () => {
     expect(client.quit()).toBe(false);
     expect(api.LMSFinish).not.toHaveBeenCalled();
   });
+
+  it('respects an exit value set explicitly via set() — does not overwrite', () => {
+    const client = new ScormClient({ version: '1.2' });
+    client.init();
+    client.set('cmi.core.lesson_status', 'completed');
+    client.set('cmi.core.exit', 'time-out');
+    client.quit();
+    const exitCalls = api.LMSSetValue.mock.calls.filter(([k]) => k === 'cmi.core.exit');
+    expect(exitCalls).toHaveLength(1);
+    expect(exitCalls[0][1]).toBe('time-out');
+  });
+
+  it('still calls LMSFinish when pre-terminate commit fails', () => {
+    api.LMSCommit.mockReturnValue('false');
+    const client = new ScormClient({ version: '1.2' });
+    client.init();
+    const ok = client.quit();
+    expect(ok).toBe(false); // surfaces the failure
+    expect(api.LMSFinish).toHaveBeenCalledWith('');
+    expect(client.isActive).toBe(false);
+  });
 });
 
 describe('ScormClient.quit (SCORM 2004)', () => {

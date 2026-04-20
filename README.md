@@ -269,7 +269,9 @@ client.location('slide-12'); // save position
 
 Shortcut for reading or writing the version-appropriate success status field.
 
-Maps to `cmi.core.success_status` (1.2) or `cmi.success_status` (2004).
+Maps to `cmi.success_status` on SCORM 2004. SCORM 1.2 has no separate
+success-status element — `passed` / `failed` live on `cmi.core.lesson_status` —
+so `success()` transparently routes to `cmi.core.lesson_status` in that version.
 
 - Called with no argument → returns the current value string (`'passed'`, `'failed'`, or `'unknown'`)
 - Called with `true` → sets `'passed'`

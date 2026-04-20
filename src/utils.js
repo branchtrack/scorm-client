@@ -51,7 +51,7 @@ export function normalizeField(version, key) {
 export function stringToBoolean(value) {
   switch (typeof value) {
     case 'object':
-    case 'string':  return /(true|1)/i.test(value);
+    case 'string':  return /^(true|1)$/i.test(value);
     case 'number':  return !!value;
     case 'boolean': return value;
     case 'undefined': return null;
