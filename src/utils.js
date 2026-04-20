@@ -64,19 +64,30 @@ export function stringToBoolean(value) {
 /**
  * Format elapsed seconds as a SCORM session time string.
  *
- * - SCORM 1.2  → HH:MM:SS
- * - SCORM 2004 → PTxHxMxS
+ * - SCORM 1.2  → HH:MM:SS  (CMITimespan; spec caps at 9999:59:59.99)
+ * - SCORM 2004 → PTxHxMxS  (ISO 8601 duration)
+ *
+ * Non-finite, negative, or missing input is clamped to 0 so the wrapper
+ * never writes garbage like `PTNaNHNaNMNaNS` to the LMS (e.g. if the
+ * session start time was lost across a page reload).
  *
  * @param {string} version - '1.2' or '2004'
  * @param {number} totalSeconds
  * @returns {string}
  */
 export function formatSessionTime(version, totalSeconds) {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
+  const safe = Number.isFinite(totalSeconds) && totalSeconds > 0
+    ? Math.floor(totalSeconds)
+    : 0;
+
+  const h = Math.floor(safe / 3600);
+  const m = Math.floor((safe % 3600) / 60);
+  const s = safe % 60;
+
   if (version === '1.2') {
-    return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
+    // SCORM 1.2 CMITimespan caps at 9999:59:59.
+    const hh = Math.min(h, 9999);
+    return [hh, m, s].map(v => String(v).padStart(2, '0')).join(':');
   }
   return `PT${h}H${m}M${s}S`;
 }

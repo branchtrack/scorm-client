@@ -129,3 +129,12 @@ describe('formatSessionTime — 2004 (PTxHxMxS)', () => {
   it('3661s -> PT1H1M1S',() => expect(formatSessionTime('2004', 3661)).toBe('PT1H1M1S'));
   it('3600s -> PT1H0M0S',() => expect(formatSessionTime('2004', 3600)).toBe('PT1H0M0S'));
 });
+
+describe('formatSessionTime — invalid input', () => {
+  it('NaN clamps to 0 (1.2)',       () => expect(formatSessionTime('1.2', NaN)).toBe('00:00:00'));
+  it('NaN clamps to 0 (2004)',      () => expect(formatSessionTime('2004', NaN)).toBe('PT0H0M0S'));
+  it('undefined clamps to 0 (1.2)', () => expect(formatSessionTime('1.2', undefined)).toBe('00:00:00'));
+  it('negative clamps to 0 (2004)', () => expect(formatSessionTime('2004', -42)).toBe('PT0H0M0S'));
+  it('Infinity clamps to 0 (2004)', () => expect(formatSessionTime('2004', Infinity)).toBe('PT0H0M0S'));
+  it('caps at 9999h for 1.2',       () => expect(formatSessionTime('1.2', 10_000 * 3600)).toBe('9999:00:00'));
+});

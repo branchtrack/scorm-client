@@ -128,7 +128,7 @@ export class ScormClient {
     }
 
     // Write session time before committing.
-    if (this.#handleSessionTime && this.#sessionStartTime) {
+    if (this.#handleSessionTime && Number.isFinite(this.#sessionStartTime)) {
       const elapsedSeconds = Math.round((Date.now() - this.#sessionStartTime) / 1000);
       this.set('session_time', formatSessionTime(this.#version, elapsedSeconds));
     }
