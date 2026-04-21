@@ -1,3 +1,22 @@
+// ── Version validation ──────────────────────────────────────────────────── //
+
+/**
+ * Returns true if version is a recognised SCORM version string.
+ * Emits a console warning when the version is invalid.
+ *
+ * @param {string} version
+ * @returns {boolean}
+ */
+export function isValidVersion(version) {
+  if (version === '1.2' || version === '2004') return true;
+
+  if (typeof console !== 'undefined') {
+    console.warn(`[scorm-client] unknown version "${version}". Expected '1.2' or '2004'.`);
+  }
+
+  return false;
+}
+
 // ── Field normalisation ───────────────────────────────────────────────────── //
 
 /**
@@ -15,6 +34,8 @@
  */
 export function normalizeField(version, key) {
   if (key.startsWith('cmi.')) return key;
+
+  if (!isValidVersion(version)) return null;
 
   const exceptions = {
     '1.2': {
@@ -72,11 +93,15 @@ export function stringToBoolean(value) {
  * @returns {string}
  */
 export function formatSessionTime(version, totalSeconds) {
+  if (!isValidVersion(version)) return null;
+
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = totalSeconds % 60;
+
   if (version === '1.2') {
     return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
   }
+
   return `PT${h}H${m}M${s}S`;
 }

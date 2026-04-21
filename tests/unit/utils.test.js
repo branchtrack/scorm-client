@@ -1,13 +1,64 @@
-import { describe, it, expect } from 'vitest';
-import { normalizeField, stringToBoolean, formatSessionTime } from '../../src/utils.js';
+import { describe, it, expect, vi } from 'vitest';
+import { isValidVersion, normalizeField, stringToBoolean, formatSessionTime } from '../../src/utils.js';
 
 // ── normalizeField ────────────────────────────────────────────────────────── //
+
+// ── isValidVersion ───────────────────────────────────────────────────────── //
+
+describe('isValidVersion', () => {
+  it('returns true for "1.2"',  () => expect(isValidVersion('1.2')).toBe(true));
+  it('returns true for "2004"', () => expect(isValidVersion('2004')).toBe(true));
+  it('returns false for "1.3"', () => expect(isValidVersion('1.3')).toBe(false));
+  it('returns false for null',  () => expect(isValidVersion(null)).toBe(false));
+  it('returns false for empty string', () => expect(isValidVersion('')).toBe(false));
+
+  it('warns when version is invalid', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    isValidVersion('bad');
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('does not warn when version is valid', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    isValidVersion('1.2');
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+});
+
+// ── normalizeField ────────────────────────────────────────────────────────── //
+
+describe('normalizeField — invalid version', () => {
+  it('returns null for an unknown version string', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(normalizeField('1.3', 'score')).toBeNull();
+    spy.mockRestore();
+  });
+
+  it('returns null for null version', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(normalizeField(null, 'score')).toBeNull();
+    spy.mockRestore();
+  });
+
+  it('logs a console warning with the bad version', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    normalizeField('unknown', 'score');
+    expect(spy).toHaveBeenCalledWith(expect.stringContaining('unknown'));
+    spy.mockRestore();
+  });
+});
 
 describe('normalizeField — pass-through', () => {
   it('returns key unchanged when it starts with cmi.', () => {
     expect(normalizeField('1.2',  'cmi.core.score.raw')).toBe('cmi.core.score.raw');
     expect(normalizeField('2004', 'cmi.score.raw')).toBe('cmi.score.raw');
     expect(normalizeField('1.2',  'cmi.suspend_data')).toBe('cmi.suspend_data');
+  });
+
+  it('returns cmi. key unchanged even with an invalid version', () => {
+    expect(normalizeField(null, 'cmi.core.score.raw')).toBe('cmi.core.score.raw');
   });
 });
 
@@ -123,4 +174,25 @@ describe('formatSessionTime — 2004 (PTxHxMxS)', () => {
   it('90s -> PT0H1M30S', () => expect(formatSessionTime('2004', 90)).toBe('PT0H1M30S'));
   it('3661s -> PT1H1M1S',() => expect(formatSessionTime('2004', 3661)).toBe('PT1H1M1S'));
   it('3600s -> PT1H0M0S',() => expect(formatSessionTime('2004', 3600)).toBe('PT1H0M0S'));
+});
+
+describe('formatSessionTime — invalid version', () => {
+  it('returns null for an unknown version string', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(formatSessionTime('1.3', 90)).toBeNull();
+    spy.mockRestore();
+  });
+
+  it('returns null for null version', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(formatSessionTime(null, 90)).toBeNull();
+    spy.mockRestore();
+  });
+
+  it('logs a console warning with the bad version', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    formatSessionTime('unknown', 60);
+    expect(spy).toHaveBeenCalledWith(expect.stringContaining('unknown'));
+    spy.mockRestore();
+  });
 });
