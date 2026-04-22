@@ -412,8 +412,8 @@ export class ScormClient {
 
     return String(
       this.#version === '1.2'
-        ? api.LMSGetDiagnostic(errorCode)
-        : api.GetDiagnostic(errorCode)
+        ? api.LMSGetDiagnostic(String(errorCode))
+        : api.GetDiagnostic(String(errorCode))
     );
   }
 
