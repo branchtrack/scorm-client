@@ -273,17 +273,17 @@ export class ScormClient {
    * @returns {string|boolean}
    */
   status(value) {
-    if (value === undefined) return this.get('lesson_status');
+    if (value === undefined) return this.get('completion_status');
 
-    if (value === true)  return this.set('lesson_status', this.#statusValues[0]);
-    if (value === false) return this.set('lesson_status', this.#statusValues[1]);
+    if (value === true)  return this.set('completion_status', this.#statusValues[0]);
+    if (value === false) return this.set('completion_status', this.#statusValues[1]);
 
     if (!value) {
       this.#trace('status failed: status value was not specified.');
       return false;
     }
 
-    return this.set('lesson_status', value);
+    return this.set('completion_status', value);
   }
 
   /** Alias for {@link status}. */
