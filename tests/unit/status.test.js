@@ -73,3 +73,70 @@ describe('ScormClient.completion (alias for status)', () => {
     delete window.API_1484_11;
   });
 });
+
+// ── Status validation (invalid values) ───────────────────────────────────── //
+
+describe('ScormClient.status — invalid value rejected (SCORM 1.2)', () => {
+  let api, client;
+  beforeEach(() => {
+    api = mockApi12();
+    window.API = api;
+    client = new ScormClient({ version: '1.2' });
+    client.init();
+  });
+  afterEach(() => { delete window.API; });
+
+  it('returns false for unknown value "bogus"', () => {
+    expect(client.status('bogus')).toBe(false);
+  });
+  it('does not forward invalid value to LMS', () => {
+    client.status('bogus');
+    expect(api.LMSSetValue).not.toHaveBeenCalledWith('cmi.core.lesson_status', 'bogus');
+  });
+  it('"unknown" is rejected (not a 1.2 value)', () => {
+    expect(client.status('unknown')).toBe(false);
+  });
+});
+
+describe('ScormClient.status — invalid value rejected (SCORM 2004)', () => {
+  let api, client;
+  beforeEach(() => {
+    api = mockApi2004();
+    window.API_1484_11 = api;
+    client = new ScormClient({ version: '2004' });
+    client.init();
+  });
+  afterEach(() => { delete window.API_1484_11; });
+
+  it('returns false for unknown value "bogus"', () => {
+    expect(client.status('bogus')).toBe(false);
+  });
+  it('does not forward invalid value to LMS', () => {
+    client.status('bogus');
+    expect(api.SetValue).not.toHaveBeenCalledWith('cmi.completion_status', 'bogus');
+  });
+  it('"browsed" is rejected (not a 2004 value)', () => {
+    expect(client.status('browsed')).toBe(false);
+  });
+});
+
+describe('ScormClient.success — invalid value rejected (SCORM 2004)', () => {
+  let api, client;
+  beforeEach(() => {
+    api = mockApi2004();
+    window.API_1484_11 = api;
+    client = new ScormClient({ version: '2004' });
+    client.init();
+  });
+  afterEach(() => { delete window.API_1484_11; });
+
+  it('returns false for unknown value "bogus"', () => {
+    expect(client.success('bogus')).toBe(false);
+  });
+  it('"completed" is rejected for success_status', () => {
+    expect(client.success('completed')).toBe(false);
+  });
+  it('valid value "passed" is accepted', () => {
+    expect(client.success('passed')).toBe(true);
+  });
+});

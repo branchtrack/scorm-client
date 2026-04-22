@@ -1,3 +1,5 @@
+import { FIELD_VALUES } from './scorm_spec.js';
+
 // ── Version validation ──────────────────────────────────────────────────── //
 
 /**
@@ -59,6 +61,24 @@ export function normalizeField(version, key) {
 
   const prefix = version === '1.2' ? 'cmi.core.' : 'cmi.';
   return prefix + key;
+}
+
+// ── Status validation ─────────────────────────────────────────────────────── //
+
+/**
+ * Returns true when `value` is a valid value for the given version and
+ * fully-qualified CMI field, or when no constraint is defined for that
+ * version/field combination.
+ *
+ * @param {string} version - '1.2' or '2004'
+ * @param {string} field   - Fully-qualified CMI field name (e.g. 'cmi.core.lesson_status').
+ * @param {string} value
+ * @returns {boolean}
+ */
+export function isValidValue(version, field, value) {
+  const allowed = FIELD_VALUES[version]?.[field];
+  if (!allowed) return true;
+  return allowed.includes(value);
 }
 
 // ── Type coercion ─────────────────────────────────────────────────────────── //

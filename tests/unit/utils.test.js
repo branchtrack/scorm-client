@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { isValidVersion, normalizeField, stringToBoolean, formatSessionTime } from '../../src/utils.js';
+import { isValidVersion, normalizeField, stringToBoolean, formatSessionTime, isValidValue } from '../../src/utils.js';
 
 // ── normalizeField ────────────────────────────────────────────────────────── //
 
@@ -164,6 +164,42 @@ describe('stringToBoolean', () => {
   it('"true1" -> false',  () => expect(stringToBoolean('true1')).toBe(false));
   it('"1true" -> false',  () => expect(stringToBoolean('1true')).toBe(false));
   it('"" -> false',       () => expect(stringToBoolean('')).toBe(false));
+});
+
+// ── isValidValue ─────────────────────────────────────────────────────────── //
+
+describe('isValidValue — cmi.core.lesson_status (SCORM 1.2)', () => {
+  const version = '1.2', field = 'cmi.core.lesson_status';
+  it.each(['passed', 'completed', 'failed', 'incomplete', 'browsed', 'not attempted'])(
+    '"%s" is valid', (v) => expect(isValidValue(version, field, v)).toBe(true)
+  );
+  it('"invalid" is not valid',         () => expect(isValidValue(version, field, 'invalid')).toBe(false));
+  it('"unknown" is not valid for 1.2', () => expect(isValidValue(version, field, 'unknown')).toBe(false));
+  it('empty string is not valid',       () => expect(isValidValue(version, field, '')).toBe(false));
+});
+
+describe('isValidValue — cmi.completion_status (SCORM 2004)', () => {
+  const version = '2004', field = 'cmi.completion_status';
+  it.each(['completed', 'incomplete', 'not attempted', 'unknown'])(
+    '"%s" is valid', (v) => expect(isValidValue(version, field, v)).toBe(true)
+  );
+  it('"passed" is not valid for completion_status',  () => expect(isValidValue(version, field, 'passed')).toBe(false));
+  it('"browsed" is not valid for completion_status', () => expect(isValidValue(version, field, 'browsed')).toBe(false));
+});
+
+describe('isValidValue — cmi.success_status (SCORM 2004)', () => {
+  const version = '2004', field = 'cmi.success_status';
+  it.each(['passed', 'failed', 'unknown'])(
+    '"%s" is valid', (v) => expect(isValidValue(version, field, v)).toBe(true)
+  );
+  it('"completed" is not valid for success_status', () => expect(isValidValue(version, field, 'completed')).toBe(false));
+  it('"browsed" is not valid for success_status',   () => expect(isValidValue(version, field, 'browsed')).toBe(false));
+});
+
+describe('isValidValue — non-status fields', () => {
+  it('returns true for cmi.score.raw (no constraint)', () => expect(isValidValue('1.2', 'cmi.score.raw', 'anything')).toBe(true));
+  it('returns true for unknown field',                  () => expect(isValidValue('1.2', 'cmi.suspend_data', 'anything')).toBe(true));
+  it('returns true for unknown version',                () => expect(isValidValue('1.3', 'cmi.core.lesson_status', 'passed')).toBe(true));
 });
 
 // ── formatSessionTime ────────────────────────────────────────────────────── //

@@ -1,4 +1,4 @@
-import { normalizeField, stringToBoolean, formatSessionTime } from './utils.js';
+import { normalizeField, stringToBoolean, formatSessionTime, isValidValue } from './utils.js';
 
 /*
   ScormClient — modern class-based SCORM 1.2 / 2004 API wrapper
@@ -202,6 +202,11 @@ export class ScormClient {
     const api = this.#getApiHandle();
     if (!api) {
       this.#trace(`data.set('${parameter}') failed: API is null.`);
+      return false;
+    }
+
+    if (!isValidValue(this.#version, parameter, value)) {
+      this.#trace(`data.set('${parameter}') failed: invalid status value "${value}".`);
       return false;
     }
 
