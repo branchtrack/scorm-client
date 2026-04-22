@@ -19,9 +19,10 @@ import { normalizeField, stringToBoolean, formatSessionTime, isValidValue } from
 export class ScormClient {
   // Private state
   #version;
-  #handleCompletionStatus;
+  #handleStatus;
   #handleExitMode;
   #handleSessionTime;
+  #statusValues;
   #debugActive;
   #apiHandle;
   #apiFound;
@@ -33,16 +34,22 @@ export class ScormClient {
   /**
    * @param {object}      [options]
    * @param {string|null} [options.version]                - Pre-set SCORM version ('1.2' or '2004'). Auto-detected when null.
-   * @param {boolean}     [options.handleCompletionStatus] - Automatically set 'incomplete' on first launch (default: true).
+   * @param {boolean}     [options.handleStatus]           - Automatically set status on first launch (default: true).
    * @param {boolean}     [options.handleExitMode]         - Automatically set exit mode on terminate (default: true).
    * @param {boolean}     [options.handleSessionTime]      - Automatically write session time on quit (default: true).
+   * @param {'completion'|'success'|[string,string]} [options.statusMode]
+   *   Controls what true/false map to in status().
+   *   - 'completion' (default) → ['completed', 'incomplete']
+   *   - 'success'              → ['passed', 'failed'] (SCORM 1.2 only; falls back to 'completion' on 2004)
+   *   - [trueVal, falseVal]   → custom string pair, e.g. ['completed', 'failed']
    * @param {boolean}     [options.debug]                  - Enable console trace logging (default: false).
    */
-  constructor({ version = null, handleCompletionStatus = true, handleExitMode = true, handleSessionTime = true, debug = false } = {}) {
+  constructor({ version = null, handleStatus = true, handleExitMode = true, handleSessionTime = true, statusMode = 'completion', debug = false } = {}) {
     this.#version = version;
-    this.#handleCompletionStatus = handleCompletionStatus;
+    this.#handleStatus = handleStatus;
     this.#handleExitMode = handleExitMode;
     this.#handleSessionTime = handleSessionTime;
+    this.#statusValues = ['completed', 'incomplete'];
     this.#debugActive = debug;
     this.#apiHandle = null;
     this.#apiFound = false;
@@ -50,6 +57,12 @@ export class ScormClient {
     this.#completionStatus = null;
     this.#exitStatus = null;
     this.#sessionStartTime = null;
+
+    if (Array.isArray(statusMode)) {
+      this.#statusValues = statusMode;
+    } else if (statusMode === 'success' && version !== '2004') {
+      this.#statusValues = ['passed', 'failed'];
+    }
   }
 
   // ── Public read-only accessors ──────────────────────────────────────────── //
@@ -86,10 +99,10 @@ export class ScormClient {
         this.#connectionActive = true;
         this.#sessionStartTime = Date.now();
 
-        if (this.#handleCompletionStatus) {
+        if (this.#handleStatus) {
           const currentStatus = this.status();
           if (currentStatus === 'not attempted' || currentStatus === 'unknown') {
-            this.status('incomplete');
+            this.status(false);
             this.save();
           }
         }
@@ -249,11 +262,21 @@ export class ScormClient {
 
   /**
    * Get or set the SCORM completion status.
-   * @param {'get'|'set'} action
-   * @param {string} [value] - Required when action is 'set'.
+   *
+   * - Called with no argument  → returns the current value string.
+   * - Called with true/false   → maps to a string based on `statusMode`:
+   *     'completion' mode (default): true → 'completed', false → 'incomplete'
+   *     'success' mode (SCORM 1.2):  true → 'passed',    false → 'failed'
+   * - Called with a string     → sets the value directly.
+   *
+   * @param {boolean|string} [value]
+   * @returns {string|boolean}
    */
   status(value) {
     if (value === undefined) return this.get('lesson_status');
+
+    if (value === true)  return this.set('lesson_status', this.#statusValues[0]);
+    if (value === false) return this.set('lesson_status', this.#statusValues[1]);
 
     if (!value) {
       this.#trace('status failed: status value was not specified.');

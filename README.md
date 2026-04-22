@@ -36,13 +36,14 @@ client.quit();
 const client = new ScormClient(options);
 ```
 
-| Option                   | Type                      | Default | Description                                                                                                                  |
-| ------------------------ | ------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `version`                | `'1.2' \| '2004' \| null` | `null`  | SCORM version to use. When `null`, the client auto-detects by looking for `window.API` (1.2) or `window.API_1484_11` (2004). |
-| `handleCompletionStatus` | `boolean`                 | `true`  | On `init()`, if the current status is `not attempted` (1.2) or `unknown` (2004), automatically sets it to `incomplete`.      |
-| `handleExitMode`         | `boolean`                 | `true`  | On `quit()`, automatically sets the exit CMI field to `suspend` (incomplete) or `logout`/`normal` (completed/passed).        |
-| `handleSessionTime`      | `boolean`                 | `true`  | On `quit()`, automatically computes elapsed session time and writes it to the appropriate CMI field before committing.       |
-| `debug`                  | `boolean`                 | `false` | Logs trace messages to `console.log`.                                                                                        |
+| Option              | Type                                            | Default        | Description                                                                                                                                                                                                          |
+| ------------------- | ----------------------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `version`           | `'1.2' \| '2004' \| null`                       | `null`         | SCORM version to use. When `null`, the client auto-detects by looking for `window.API` (1.2) or `window.API_1484_11` (2004).                                                                                         |
+| `handleStatus`      | `boolean`                                       | `true`         | On `init()`, if the current status is `not attempted` (1.2) or `unknown` (2004), automatically sets it to `incomplete`.                                                                                              |
+| `statusMode`        | `'completion' \| 'success' \| [string, string]` | `'completion'` | Controls what `true`/`false` map to in `status()`. `'completion'` → `completed`/`incomplete`; `'success'` → `passed`/`failed` (SCORM 1.2 only, falls back on 2004); or a custom pair e.g. `['completed', 'failed']`. |
+| `handleExitMode`    | `boolean`                                       | `true`         | On `quit()`, automatically sets the exit CMI field to `suspend` (incomplete) or `logout`/`normal` (completed/passed).                                                                                                |
+| `handleSessionTime` | `boolean`                                       | `true`         | On `quit()`, automatically computes elapsed session time and writes it to the appropriate CMI field before committing.                                                                                               |
+| `debug`             | `boolean`                                       | `false`        | Logs trace messages to `console.log`.                                                                                                                                                                                |
 
 ```js
 // Auto-detect version (recommended)
@@ -57,7 +58,8 @@ const client = new ScormClient({ debug: true });
 // All options
 const client = new ScormClient({
   version: '1.2',
-  handleCompletionStatus: true,
+  handleStatus: true,
+  statusMode: 'completion', // or 'success' (1.2 only), or ['completed', 'failed']
   handleExitMode: true,
   handleSessionTime: true,
   debug: false,

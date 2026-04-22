@@ -64,6 +64,34 @@ describe('ScormClient.init (SCORM 2004)', () => {
   });
 });
 
+describe('ScormClient.init — statusMode: success (SCORM 1.2)', () => {
+  let api;
+
+  beforeEach(() => { api = mockApi12(); window.API = api; });
+  afterEach(() => { delete window.API; });
+
+  it('writes "failed" on first launch when initial status is "not attempted"', () => {
+    api.LMSGetValue.mockReturnValue('not attempted');
+    const client = new ScormClient({ version: '1.2', statusMode: 'success' });
+    client.init();
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.lesson_status', 'failed');
+  });
+});
+
+describe('ScormClient.init — statusMode: success ignored on SCORM 2004', () => {
+  let api;
+
+  beforeEach(() => { api = mockApi2004(); window.API_1484_11 = api; });
+  afterEach(() => { delete window.API_1484_11; });
+
+  it('writes "incomplete" on first launch (success mode has no effect on 2004)', () => {
+    api.GetValue.mockReturnValue('unknown');
+    const client = new ScormClient({ version: '2004', statusMode: 'success' });
+    client.init();
+    expect(api.SetValue).toHaveBeenCalledWith('cmi.completion_status', 'incomplete');
+  });
+});
+
 describe('ScormClient.init — no API', () => {
   it('returns false when no LMS API found on window', () => {
     const client = new ScormClient({ version: '1.2' });

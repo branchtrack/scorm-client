@@ -140,3 +140,135 @@ describe('ScormClient.success — invalid value rejected (SCORM 2004)', () => {
     expect(client.success('passed')).toBe(true);
   });
 });
+
+// ── status(true/false) — completion mode (default) ──────────────────────────────────────── //
+
+describe('ScormClient.status(bool) — statusMode: completion — SCORM 1.2', () => {
+  let api, client;
+  beforeEach(() => {
+    api = mockApi12();
+    window.API = api;
+    client = new ScormClient({ version: '1.2' });
+    client.init();
+  });
+  afterEach(() => { delete window.API; });
+
+  it('status(true) writes "completed"', () => {
+    expect(client.status(true)).toBe(true);
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.lesson_status', 'completed');
+  });
+
+  it('status(false) writes "incomplete"', () => {
+    expect(client.status(false)).toBe(true);
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.lesson_status', 'incomplete');
+  });
+});
+
+describe('ScormClient.status(bool) — statusMode: completion — SCORM 2004', () => {
+  let api, client;
+  beforeEach(() => {
+    api = mockApi2004();
+    window.API_1484_11 = api;
+    client = new ScormClient({ version: '2004' });
+    client.init();
+  });
+  afterEach(() => { delete window.API_1484_11; });
+
+  it('status(true) writes "completed"', () => {
+    expect(client.status(true)).toBe(true);
+    expect(api.SetValue).toHaveBeenCalledWith('cmi.completion_status', 'completed');
+  });
+
+  it('status(false) writes "incomplete"', () => {
+    expect(client.status(false)).toBe(true);
+    expect(api.SetValue).toHaveBeenCalledWith('cmi.completion_status', 'incomplete');
+  });
+});
+
+// ── status(true/false) — success mode ─────────────────────────────────────────────────── //
+
+describe('ScormClient.status(bool) — statusMode: success — SCORM 1.2', () => {
+  let api, client;
+  beforeEach(() => {
+    api = mockApi12();
+    window.API = api;
+    client = new ScormClient({ version: '1.2', statusMode: 'success' });
+    client.init();
+  });
+  afterEach(() => { delete window.API; });
+
+  it('status(true) writes "passed"', () => {
+    expect(client.status(true)).toBe(true);
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.lesson_status', 'passed');
+  });
+
+  it('status(false) writes "failed"', () => {
+    expect(client.status(false)).toBe(true);
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.lesson_status', 'failed');
+  });
+});
+
+describe('ScormClient.status(bool) — statusMode: success — SCORM 2004 falls back', () => {
+  let api, client;
+  beforeEach(() => {
+    api = mockApi2004();
+    window.API_1484_11 = api;
+    client = new ScormClient({ version: '2004', statusMode: 'success' });
+    client.init();
+  });
+  afterEach(() => { delete window.API_1484_11; });
+
+  it('status(true) falls back to "completed" (2004 does not support success mode)', () => {
+    expect(client.status(true)).toBe(true);
+    expect(api.SetValue).toHaveBeenCalledWith('cmi.completion_status', 'completed');
+  });
+
+  it('status(false) falls back to "incomplete"', () => {
+    expect(client.status(false)).toBe(true);
+    expect(api.SetValue).toHaveBeenCalledWith('cmi.completion_status', 'incomplete');
+  });
+});
+
+// ── status(true/false) — array form ──────────────────────────────────────────────────────── //
+
+describe('ScormClient.status(bool) — statusMode: array — SCORM 1.2', () => {
+  let api, client;
+  beforeEach(() => {
+    api = mockApi12();
+    window.API = api;
+    client = new ScormClient({ version: '1.2', statusMode: ['completed', 'failed'] });
+    client.init();
+  });
+  afterEach(() => { delete window.API; });
+
+  it('status(true) writes the first array element', () => {
+    expect(client.status(true)).toBe(true);
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.lesson_status', 'completed');
+  });
+
+  it('status(false) writes the second array element', () => {
+    expect(client.status(false)).toBe(true);
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.lesson_status', 'failed');
+  });
+});
+
+describe('ScormClient.status(bool) — statusMode: array — SCORM 2004', () => {
+  let api, client;
+  beforeEach(() => {
+    api = mockApi2004();
+    window.API_1484_11 = api;
+    client = new ScormClient({ version: '2004', statusMode: ['completed', 'incomplete'] });
+    client.init();
+  });
+  afterEach(() => { delete window.API_1484_11; });
+
+  it('status(true) writes the first array element', () => {
+    expect(client.status(true)).toBe(true);
+    expect(api.SetValue).toHaveBeenCalledWith('cmi.completion_status', 'completed');
+  });
+
+  it('status(false) writes the second array element', () => {
+    expect(client.status(false)).toBe(true);
+    expect(api.SetValue).toHaveBeenCalledWith('cmi.completion_status', 'incomplete');
+  });
+});
