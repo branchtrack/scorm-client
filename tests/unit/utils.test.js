@@ -150,6 +150,7 @@ describe('normalizeField — SCORM 2004', () => {
 
 describe('stringToBoolean', () => {
   it('"true" -> true', () => expect(stringToBoolean('true')).toBe(true));
+  it('"TRUE" -> true', () => expect(stringToBoolean('TRUE')).toBe(true));
   it('"false" -> false', () => expect(stringToBoolean('false')).toBe(false));
   it('"1" -> true', () => expect(stringToBoolean('1')).toBe(true));
   it('"0" -> false', () => expect(stringToBoolean('0')).toBe(false));
@@ -158,6 +159,11 @@ describe('stringToBoolean', () => {
   it('1 -> true', () => expect(stringToBoolean(1)).toBe(true));
   it('0 -> false', () => expect(stringToBoolean(0)).toBe(false));
   it('undefined -> null', () => expect(stringToBoolean(undefined)).toBe(null));
+  it('"abctrue" -> false (substring match must not count)', () => expect(stringToBoolean('abctrue')).toBe(false));
+  it('"abc1" -> false (substring match must not count)',    () => expect(stringToBoolean('abc1')).toBe(false));
+  it('"true1" -> false',  () => expect(stringToBoolean('true1')).toBe(false));
+  it('"1true" -> false',  () => expect(stringToBoolean('1true')).toBe(false));
+  it('"" -> false',       () => expect(stringToBoolean('')).toBe(false));
 });
 
 // ── formatSessionTime ────────────────────────────────────────────────────── //
