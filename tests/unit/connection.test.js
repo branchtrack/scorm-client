@@ -87,12 +87,12 @@ describe('ScormClient.quit (SCORM 1.2)', () => {
     expect(client.isActive).toBe(false);
   });
 
-  it('sets exit to "logout" when completed', () => {
+  it('sets exit to "" when completed', () => {
     const client = new ScormClient({ version: '1.2' });
     client.init();
     client.set('cmi.core.lesson_status', 'completed');
     client.quit();
-    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.exit', 'logout');
+    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.exit', '');
   });
 
   it('returns false when not active', () => {

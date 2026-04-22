@@ -124,7 +124,7 @@ export class ScormClient {
 
     if (this.#handleExitMode && !this.#exitStatus) {
       const finished = this.#completionStatus === 'completed' || this.#completionStatus === 'passed';
-      this.set('exit', finished ? (this.#version === '1.2' ? 'logout' : 'normal') : 'suspend');
+      this.set('exit', finished ? (this.#version === '1.2' ? '' : 'normal') : 'suspend');
     }
 
     // Write session time before committing.
