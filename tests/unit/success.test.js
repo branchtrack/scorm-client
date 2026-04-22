@@ -14,28 +14,24 @@ describe('ScormClient.success (SCORM 1.2)', () => {
 
   afterEach(() => { delete window.API; });
 
-  it('success() get calls cmi.core.success_status', () => {
+  it('success() returns false — not supported in 1.2', () => {
+    expect(client.success()).toBe(false);
+  });
+
+  it('success(true) returns false — not supported in 1.2', () => {
+    expect(client.success(true)).toBe(false);
+  });
+
+  it('success(false) returns false — not supported in 1.2', () => {
+    expect(client.success(false)).toBe(false);
+  });
+
+  it('success() does not call the LMS API', () => {
+    api.LMSGetValue.mockClear();
+    api.LMSSetValue.mockClear();
     client.success();
-    expect(api.LMSGetValue).toHaveBeenCalledWith('cmi.core.success_status');
-  });
-
-  it('success(true) sets "passed"', () => {
-    client.success(true);
-    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.success_status', 'passed');
-  });
-
-  it('success(false) sets "failed"', () => {
-    client.success(false);
-    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.success_status', 'failed');
-  });
-
-  it('success(string) sets value directly', () => {
-    client.success('unknown');
-    expect(api.LMSSetValue).toHaveBeenCalledWith('cmi.core.success_status', 'unknown');
-  });
-
-  it('success(true) returns true on success', () => {
-    expect(client.success(true)).toBe(true);
+    expect(api.LMSGetValue).not.toHaveBeenCalled();
+    expect(api.LMSSetValue).not.toHaveBeenCalled();
   });
 });
 

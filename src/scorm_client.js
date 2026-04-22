@@ -269,8 +269,10 @@ export class ScormClient {
   // ── Success shortcut ─────────────────────────────────────────────────────── //
 
   /**
-   * Get or set the SCORM success status.
-   * Maps to cmi.core.success_status (1.2) or cmi.success_status (2004).
+   * Get or set the SCORM success status (SCORM 2004 only).
+   * Maps to cmi.success_status (2004).
+   *
+   * Not available in SCORM 1.2 — use {@link status} with 'passed' / 'failed' instead.
    *
    * - Called with no argument → returns the current value string
    * - Called with true/false  → sets 'passed' / 'failed'
@@ -280,6 +282,11 @@ export class ScormClient {
    * @returns {string|boolean}
    */
   success(value) {
+    if (this.#version === '1.2') {
+      this.#trace('success() is not supported in SCORM 1.2. Use status() with "passed" or "failed" instead.');
+      return false;
+    }
+
     if (value === undefined) return this.get('success_status');
     if (value === true)  return this.set('success_status', 'passed');
     if (value === false) return this.set('success_status', 'failed');
