@@ -419,45 +419,56 @@ export class ScormClient {
 
   // ── Private: API discovery ───────────────────────────────────────────────── //
 
+  #tryCrossOrigin(fn, label) {
+    try {
+      return fn();
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'SecurityError') {
+        this.#trace(`${label}: cross-origin SecurityError swallowed.`);
+
+        return null;
+      }
+
+      throw e;
+    }
+  }
+
   #findApi(win) {
     let attempts = 0;
     const limit = 500;
 
-    while (
-      !win.API && !win.API_1484_11 &&
-      win.parent && win.parent !== win &&
-      attempts <= limit
-    ) {
-      attempts++;
-      win = win.parent;
-    }
+    return this.#tryCrossOrigin(() => {
+      while (
+        !win.API && !win.API_1484_11 &&
+        win.parent && win.parent !== win &&
+        attempts <= limit
+      ) {
+        attempts++;
+        win = win.parent;
+      }
 
-    if (this.#version) {
-      if (this.#version === '2004') return win.API_1484_11 ?? null;
-      if (this.#version === '1.2')  return win.API ?? null;
+      if (this.#version) {
+        if (this.#version === '2004') return win.API_1484_11 ?? null;
+        if (this.#version === '1.2')  return win.API ?? null;
+
+        return null;
+      }
+
+      if (win.API_1484_11) { this.#version = '2004'; return win.API_1484_11; }
+      if (win.API)         { this.#version = '1.2';  return win.API; }
+
+      this.#trace(`API.find: no API found after ${attempts} attempts.`);
+
       return null;
-    }
-
-    if (win.API_1484_11) { this.#version = '2004'; return win.API_1484_11; }
-    if (win.API)         { this.#version = '1.2';  return win.API; }
-
-    this.#trace(`API.find: no API found after ${attempts} attempts.`);
-
-    return null;
+    }, 'API.find');
   }
 
   #getApi() {
     let api = this.#findApi(window);
 
-    if (!api && window.parent && window.parent !== window) {
-      api = this.#findApi(window.parent);
-    }
-    if (!api && window.top?.opener) {
-      api = this.#findApi(window.top.opener);
-    }
-    if (!api && window.top?.opener?.document) {
-      api = this.#findApi(window.top.opener.document);
-    }
+    if (!api) api = this.#tryCrossOrigin(() => window.parent && window.parent !== window ? this.#findApi(window.parent) : null, 'API.get');
+    if (!api) api = this.#tryCrossOrigin(() => window.top?.opener ? this.#findApi(window.top.opener) : null, 'API.get');
+    if (!api) api = this.#tryCrossOrigin(() => window.top?.opener?.document ? this.#findApi(window.top.opener.document) : null, 'API.get');
 
     if (api) {
       this.#apiFound = true;
