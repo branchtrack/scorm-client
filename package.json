@@ -29,6 +29,9 @@
     "./utils": "./dist/utils.js"
   },
   "main": "dist/index.js",
+  "publishConfig": {
+    "tag": "latest"
+  },
   "directories": {
     "test": "tests"
   },
