@@ -14,7 +14,7 @@
     "publish": true
   },
   "hooks": {
-    "before:init": ["npm test"],
-    "after:bump": ["npm run build"]
+    "before:init": ["pnpm test"],
+    "after:bump": ["pnpm run build"]
   }
 }

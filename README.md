@@ -431,10 +431,10 @@ Built with Vite (Oxc) targeting ES2015+. Supports all modern browsers:
 ## Development
 
 ```bash
-npm install       # install dependencies
-npm run build     # compile + minify → dist/index.js
-npm test          # run tests (Vitest)
-npm run test:watch  # watch mode
+pnpm install      # install dependencies
+pnpm build        # compile + minify → dist/index.js
+pnpm test         # run tests (Vitest)
+pnpm test:watch   # watch mode
 ```
 
 ## License
